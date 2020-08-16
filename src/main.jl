@@ -1,10 +1,50 @@
-function optimize!(method::AntColony, cost_matrix, iterations; trace=false)
+# function optimize!(method::AntColony, cost_matrix, iterations; trace=false)
+#     state = initialize(cost_matrix, method)
+#     ants = [Ant(method.n_nodes) for _ in 1:method.n_ants]
+#     seeds = rand(UInt, nthreads())
+#     rngs = MersenneTwister.(seeds)
+#     for i in 1:iterations
+#         @threads for ant in ants 
+#             rng = rngs[threadid()]
+#             find_path!(ant, method, state, rng)
+#         end
+#         store_solutions!(method, state, ants)
+#         best_ants = select_best_ants(ants, method)
+#         set_best_path!(state, best_ants, trace)
+#         set_pheremones!(method, state, best_ants)
+#         compute_probabilities!(method, state)
+#     end
+#     return state
+# end
+
+# function optimize!(method::AntColony, cost_matrix, iterations; trace=false, parallel=true)
+#     state = initialize(cost_matrix, method)
+#     ants = [Ant(method.n_nodes) for _ in 1:method.n_ants]
+#     seeds = rand(UInt, nthreads())
+#     rngs = MersenneTwister.(seeds)
+#     for i in 1:iterations
+#         if parallel 
+#             pfind_paths!(ants, method, state, rngs)
+#         else
+#             find_paths!(ants, method, state)
+#         end
+#         store_solutions!(method, state, ants)
+#         best_ants = select_best_ants(ants, method)
+#         set_best_path!(state, best_ants, trace)
+#         set_pheremones!(method, state, best_ants)
+#         compute_probabilities!(method, state)
+#     end
+#     return state
+# end
+
+function optimize!(method::AntColony, cost_matrix, iterations; trace=false, parallel=true)
     state = initialize(cost_matrix, method)
     ants = [Ant(method.n_nodes) for _ in 1:method.n_ants]
+    seeds = rand(UInt, nthreads())
+    rngs = MersenneTwister.(seeds)
+    _find_paths! = parallel ? pfind_paths! : find_paths!
     for i in 1:iterations
-        for ant in ants 
-            find_path!(ant, method, state)
-        end
+        _find_paths!(ants, method, state, rngs)
         store_solutions!(method, state, ants)
         best_ants = select_best_ants(ants, method)
         set_best_path!(state, best_ants, trace)
@@ -14,6 +54,19 @@ function optimize!(method::AntColony, cost_matrix, iterations; trace=false)
     return state
 end
 
+function pfind_paths!(ants, method, state, rngs)
+    @threads for ant in ants 
+        rng = rngs[threadid()]
+        find_path!(ant, method, state, rng)
+    end
+end
+
+function find_paths!(ants, method, state, args...)
+    for ant in ants 
+        find_path!(ant, method, state)
+    end
+end
+
 function compute_probabilities!(method, state)
     @unpack θ,cost,τ,η = state
     @unpack α,β = method
@@ -21,7 +74,9 @@ function compute_probabilities!(method, state)
     θ ./= sum(θ, dims=2)
 end
 
-function find_path!(ant, method, state)
+find_path!(ant, method, state) = find_path!(ant, method, state, Random.GLOBAL_RNG)
+
+function find_path!(ant, method, state, rng)
     @unpack start_node, end_node, n_nodes = method
     @unpack path = ant
     @unpack θ,cost = state
@@ -33,7 +88,7 @@ function find_path!(ant, method, state)
     for n in 2:(n_nodes - 1)
         w = θ[n0,:]
         w[visited] .= 0.0
-        n1 = sample(1:n_nodes, Weights(w))
+        n1 = sample(rng, 1:n_nodes, Weights(w))
         visited[n1] = true
         path[n] = n1
         fitness += cost[n0,n1] 
