@@ -19,10 +19,11 @@ end
 
 mutable struct ColonyState
     τ::Array{Float64,2}
+    η::Array{Float64,2}
     cost::Array{Float64,2}
     θ::Array{Float64,2}
     best_fitness::Float64
-    best_path::Array{Float64,1}
+    best_path::Array{Int,1}
     all_solutions::Dict{Array{Int64,1},Float64}
 end
 

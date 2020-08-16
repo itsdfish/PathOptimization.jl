@@ -15,9 +15,9 @@ function optimize!(method::AntColony, cost_matrix, iterations; trace=false)
 end
 
 function compute_probabilities!(method, state)
-    @unpack θ,cost,τ = state
+    @unpack θ,cost,τ,η = state
     @unpack α,β = method
-    @. θ = (τ^α) * (cost^β)
+    @. θ = (τ^α) * (η^β)
     θ ./= sum(θ, dims=2)
 end
 
@@ -36,8 +36,8 @@ function find_path!(ant, method, state)
         n1 = sample(1:n_nodes, Weights(w))
         visited[n1] = true
         path[n] = n1
-        n0 = n1
         fitness += cost[n0,n1] 
+        n0 = n1
     end
     fitness += cost[n0,end_node]
     ant.fitness = fitness
@@ -47,9 +47,9 @@ end
 function set_best_path!(state, ants, trace)
     best_ant = ants[1]
     if best_ant.fitness < state.best_fitness
-        println("best fitness: ", best_ant.fitness)
+        trace ? println("best fitness: ", best_ant.fitness) : nothing
         state.best_fitness = best_ant.fitness
-        state.best_path = best_ant.path
+        state.best_path = copy(best_ant.path)
     end
     return nothing
 end
@@ -65,9 +65,10 @@ end
 
 function set_pheremones!(τ, ρ, ant::Ant)
     @unpack path,fitness = ant
+    τ .*= (1 - ρ)
     for i in 1:(length(path) - 1)
         n0,n1 = path[i],path[i + 1]
-        τ[n0,n1] += (1 - ρ) * τ[n0,n1] +  (1 / fitness)
+        τ[n0,n1] += (1 / fitness)
     end
     return nothing
 end
@@ -78,7 +79,8 @@ function select_best_ants(ants, method)
 end
 
 function initialize(cost, method)
-    state = ColonyState(fill(1.0, size(cost)), cost, zero(cost), Inf, Float64[],
+    η = median(cost, dims=2) ./ cost
+    state = ColonyState(fill(1.0, size(cost)), η, cost, zero(cost), Inf, Float64[],
     Dict{Array{Int64,1},Float64}())
     compute_probabilities!(method, state)
     return state
