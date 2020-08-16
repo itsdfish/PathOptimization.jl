@@ -3,6 +3,11 @@ uuid = "21b4f739-9e68-4837-8709-b1186add84d5"
 authors = ["itsdfish <itsdfish@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+
 [compat]
 julia = "1"
 
