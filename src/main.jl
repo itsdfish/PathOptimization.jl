@@ -1,43 +1,6 @@
-# function optimize!(method::AntColony, cost_matrix, iterations; trace=false)
-#     state = initialize(cost_matrix, method)
-#     ants = [Ant(method.n_nodes) for _ in 1:method.n_ants]
-#     seeds = rand(UInt, nthreads())
-#     rngs = MersenneTwister.(seeds)
-#     for i in 1:iterations
-#         @threads for ant in ants 
-#             rng = rngs[threadid()]
-#             find_path!(ant, method, state, rng)
-#         end
-#         store_solutions!(method, state, ants)
-#         best_ants = select_best_ants(ants, method)
-#         set_best_path!(state, best_ants, trace)
-#         set_pheremones!(method, state, best_ants)
-#         compute_probabilities!(method, state)
-#     end
-#     return state
-# end
-
-# function optimize!(method::AntColony, cost_matrix, iterations; trace=false, parallel=true)
-#     state = initialize(cost_matrix, method)
-#     ants = [Ant(method.n_nodes) for _ in 1:method.n_ants]
-#     seeds = rand(UInt, nthreads())
-#     rngs = MersenneTwister.(seeds)
-#     for i in 1:iterations
-#         if parallel 
-#             pfind_paths!(ants, method, state, rngs)
-#         else
-#             find_paths!(ants, method, state)
-#         end
-#         store_solutions!(method, state, ants)
-#         best_ants = select_best_ants(ants, method)
-#         set_best_path!(state, best_ants, trace)
-#         set_pheremones!(method, state, best_ants)
-#         compute_probabilities!(method, state)
-#     end
-#     return state
-# end
-
-function optimize!(method::AntColony, cost_matrix, iterations; trace=false, parallel=true)
+function optimize!(method::AntColony, cost_matrix, iterations; trace=false, parallel=true,
+    progress=false)
+    meter = Progress(iterations)
     state = initialize(cost_matrix, method)
     ants = [Ant(method.n_nodes) for _ in 1:method.n_ants]
     seeds = rand(UInt, nthreads())
@@ -50,6 +13,7 @@ function optimize!(method::AntColony, cost_matrix, iterations; trace=false, para
         set_best_path!(state, best_ants, trace)
         set_pheremones!(method, state, best_ants)
         compute_probabilities!(method, state)
+        progress ? next!(meter) : nothing
     end
     return state
 end
@@ -134,9 +98,9 @@ function select_best_ants(ants, method)
 end
 
 function initialize(cost, method)
-    η = median(cost, dims=2) ./ cost
+    η = median(cost, dims=2) ./ cost 
     state = ColonyState(fill(1.0, size(cost)), η, cost, zero(cost), Inf, Float64[],
-    Dict{Array{Int64,1},Float64}())
+        Dict{Array{Int64,1},Float64}())
     compute_probabilities!(method, state)
     return state
 end

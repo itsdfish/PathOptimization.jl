@@ -6,4 +6,5 @@ cost_matrix = rand(Uniform(0, 50), n_nodes, n_nodes)
 iterations = 200
 method = AntColony(n_ants=50, n_best=3, n_nodes=n_nodes, β=2.0, 
     retain_solutions=true)
-@elapsed result = optimize!(method, cost_matrix, iterations; trace=false, parallel=true)
+options = (trace = true, parallel = true, progress = false)
+result = optimize!(method, cost_matrix, iterations; options...);
