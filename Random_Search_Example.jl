@@ -11,4 +11,5 @@ options = (trace = true, parallel = true, progress = false)
 @elapsed result = optimize!(method, cost, iterations; options...)
 
 frontier = get_best_cost(result.frontier)
-scatter(frontier)
+pyplot()
+scatter(frontier, grid=false, leg=false, ylims=(0,1500), xlims=(0,1500))
