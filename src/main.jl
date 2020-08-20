@@ -138,9 +138,12 @@ function compute_probabilities!(θ, τ, η, α, β)
 end
 
 function store_solutions!(method, state, ants)
+    T = NTuple{state.n_obj,Float64}
     for ant in ants
-        fitness = Tuple(ant.fitness) 
+        fitness::T = Tuple(get_fitness(ant)) 
         add_candidate!(state.frontier, fitness, ant.path, 2)
     end
     return nothing
-end                   
+end
+
+get_fitness(ant) = ant.fitness
