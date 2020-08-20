@@ -1,27 +1,41 @@
-function optimize!(method::AntColony, cost_matrix, iterations; trace=false, parallel=true,
-    progress=false)
-    meter = Progress(iterations)
-    state = initialize(cost_matrix, method)
-    ants = [Ant(method, state.n_obj) for _ in 1:method.n_ants]
-    seeds = rand(UInt, nthreads())
-    rngs = MersenneTwister.(seeds)
-    _find_paths! = parallel ? pfind_paths! : find_paths!
-    for i in 1:iterations
-        _find_paths!(ants, method, state, rngs)
-        store_solutions!(method, state, ants)
-        best_ants = get_best_ants(ants, state)
-        set_pheremones!(method, state, best_ants)
-        compute_probabilities!(method, state)
-        progress ? next!(meter) : nothing
-    end
-    return state
+struct AntColony <: PathFinder
+    n_ants::Int
+    ants::Vector{Ant}
+    α::Float64
+    β::Float64
+    ρ::Float64
+    n_nodes::Int
+    start_node::Int
+    end_node::Int
 end
 
-function initialize(cost::Array{Float64,2}, method)
-    return initialize([cost], method)
+function AntColony(;n_ants=20, α=1.0, β=1.0, ρ=0.1, n_nodes=10,
+    start_node=1, end_node=n_nodes, retain_solutions=false)
+    ants = [Ant() for _ in 1:n_ants]
+    return AntColony(n_ants, ants, α, β, ρ, n_nodes, start_node, end_node)
 end
 
-function initialize(costs, method)
+mutable struct ColonyState{T} <: State
+    n_obj::Int
+    τ::Array{Array{Float64,2},1}
+    η::Array{Array{Float64,2},1}
+    cost::Array{Array{Float64,2},1}
+    θ::Array{Array{Float64,2},1}
+    frontier::T
+end
+
+mutable struct Ant
+    fitness::Array{Float64,1}
+    path::Array{Int,1}
+end
+
+Ant() = Ant(Float64[], Int[])
+
+function initialize(method::AntColony, cost::Array{Float64,2})
+    return initialize(method, [cost])
+end
+
+function initialize(method::AntColony, cost)
     n_obj = length(costs) 
     τ = map(x -> zero(x) .+ 1.0, costs)
     η = map(x -> median(x, dims=2) ./ x, costs)
@@ -33,20 +47,27 @@ function initialize(costs, method)
     return state
 end
 
-function pfind_paths!(ants, method, state, rngs)
-    @threads for ant in ants 
+function pfind_paths!(method::AntColony, state, rngs)
+    @threads for ant in method.ants 
         rng = rngs[threadid()]
         find_path!(ant, method, state, rng)
     end
 end
 
-function find_paths!(ants, method, state, args...)
-    for ant in ants
+function find_paths!(method::AntColony, state, args...)
+    for ant in method.ants
         find_path!(ant, method, state)
     end
 end
 
 find_path!(ant, method, state) = find_path!(ant, method, state, Random.GLOBAL_RNG)
+
+function update!(method::AntColony, state::ColonyState)
+    store_solutions!(method, state)
+    best_ants = get_best_ants(method, state)
+    set_pheremones!(method, state, best_ants)
+    compute_probabilities!(method, state)
+end
 
 function find_path!(ant, method, state, rng)
     @unpack start_node, end_node, n_nodes = method

@@ -6,6 +6,7 @@ module AntColonyOptimization
     export initialize, set_pheremones!, compute_probabilities!, set_pheremones!
     export pfind_paths!, find_path!,get_best_ants, compute_probabilities!, store_solutions!
 
-    include("structs.jl")
-    include("main.jl")
+    include("api.jl")
+    include("AntColony.jl")
+    include("RandomSearch.jl")
 end
