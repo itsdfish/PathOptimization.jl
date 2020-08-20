@@ -1,6 +1,6 @@
 cd(@__DIR__)
 using Revise, AntColonyOptimization, Distributions, Random
-Random.seed!(51474)
+Random.seed!(514074)
 n_nodes = 200
 cost_matrix = rand(Uniform(0, 50), n_nodes, n_nodes)
 iterations = 200
