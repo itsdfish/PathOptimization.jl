@@ -2,10 +2,10 @@ abstract type PathFinder end
 
 abstract type State end
 
-function optimize!(method::PathFinder, cost_matrix, iterations; trace=false, parallel=true,
+function optimize!(method::PathFinder, cost, iterations; trace=false, parallel=true,
     progress=false)
     meter = Progress(iterations)
-    state = initialize(method, cost_matrix)
+    state = initialize(method, cost)
     seeds = rand(UInt, nthreads())
     rngs = MersenneTwister.(seeds)
     _find_paths! = parallel ? pfind_paths! : find_paths!

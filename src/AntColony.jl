@@ -1,3 +1,10 @@
+mutable struct Ant
+    fitness::Array{Float64,1}
+    path::Array{Int,1}
+end
+
+Ant() = Ant(Float64[], Int[])
+
 struct AntColony <: PathFinder
     n_ants::Int
     ants::Vector{Ant}
@@ -24,25 +31,21 @@ mutable struct ColonyState{T} <: State
     frontier::T
 end
 
-mutable struct Ant
-    fitness::Array{Float64,1}
-    path::Array{Int,1}
-end
-
-Ant() = Ant(Float64[], Int[])
-
 function initialize(method::AntColony, cost::Array{Float64,2})
     return initialize(method, [cost])
 end
 
 function initialize(method::AntColony, cost)
-    n_obj = length(costs) 
-    τ = map(x -> zero(x) .+ 1.0, costs)
-    η = map(x -> median(x, dims=2) ./ x, costs)
-    θ = zero.(costs)
+    n_obj = length(cost)
+    n_nodes,_ = size(cost[1])
+    map(a -> a.fitness = fill(0.0, n_obj), method.ants)
+    map(a -> a.path = fill(0, n_nodes), method.ants) 
+    τ = map(x -> zero(x) .+ 1.0, cost)
+    η = map(x -> median(x, dims=2) ./ x, cost)
+    θ = zero.(cost)
     scheme = Scheme{n_obj}(0.1, is_minimizing=true)
     a = EpsBoxArchive(scheme)
-    state = ColonyState(n_obj, τ, η, costs, θ, a)
+    state = ColonyState(n_obj, τ, η, cost, θ, a)
     compute_probabilities!(method, state)
     return state
 end
@@ -50,17 +53,17 @@ end
 function pfind_paths!(method::AntColony, state, rngs)
     @threads for ant in method.ants 
         rng = rngs[threadid()]
-        find_path!(ant, method, state, rng)
+        find_path!(method, state, ant, rng)
     end
 end
 
 function find_paths!(method::AntColony, state, args...)
     for ant in method.ants
-        find_path!(ant, method, state)
+        find_path!(method, state, ant)
     end
 end
 
-find_path!(ant, method, state) = find_path!(ant, method, state, Random.GLOBAL_RNG)
+find_path!(method::AntColony, state, ant) = find_path!(method, state, ant, Random.GLOBAL_RNG)
 
 function update!(method::AntColony, state::ColonyState)
     store_solutions!(method, state)
@@ -69,7 +72,7 @@ function update!(method::AntColony, state::ColonyState)
     compute_probabilities!(method, state)
 end
 
-function find_path!(ant, method, state, rng)
+function find_path!(method::AntColony, state, ant, rng)
     @unpack start_node, end_node, n_nodes = method
     @unpack path,fitness = ant
     @unpack θ,cost,n_obj = state
@@ -114,7 +117,8 @@ function set_pheremones!(τ, ρ, current_fit, best_fit, path)
     return nothing
 end
 
-function get_best_ants(ants, state)
+function get_best_ants(method, state)
+    ants = method.ants
     ant = ants[1]
     n_obj = length(ant.fitness)
     arr = Array{typeof(ant),1}()
@@ -158,9 +162,9 @@ function compute_probabilities!(θ, τ, η, α, β)
     θ ./= sum(θ, dims=2)
 end
 
-function store_solutions!(method, state, ants)
+function store_solutions!(method, state)
     T = NTuple{state.n_obj,Float64}
-    for ant in ants
+    for ant in method.ants
         fitness::T = Tuple(get_fitness(ant)) 
         add_candidate!(state.frontier, fitness, ant.path, 2)
     end
