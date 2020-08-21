@@ -8,8 +8,8 @@ cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj]
 ###############################################################################
 # 
 ###############################################################################
-iterations = 1000
-method = AntColony(n_ants=100, n_nodes=n_nodes, β=4.0)
+iterations = 1500
+method = AntColony(n_ants=100, n_nodes=n_nodes, β=4.0, ρ=.1)
 options = (trace = true, parallel = true, progress = false)
 result = optimize!(method, cost, iterations; options...)
 

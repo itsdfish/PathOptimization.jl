@@ -8,6 +8,8 @@ Ant() = Ant(Float64[], Int[])
 struct AntColony <: PathFinder
     n_ants::Int
     ants::Vector{Ant}
+    τmin::Float64
+    τmax::Float64
     α::Float64
     β::Float64
     ρ::Float64
@@ -16,10 +18,10 @@ struct AntColony <: PathFinder
     end_node::Int
 end
 
-function AntColony(;n_ants=20, α=1.0, β=1.0, ρ=0.1, n_nodes=10,
+function AntColony(;n_ants=20, τmin=1.0, τmax=5.0, α=1.0, β=1.0, ρ=0.1, n_nodes=10,
     start_node=1, end_node=n_nodes, retain_solutions=false)
     ants = [Ant() for _ in 1:n_ants]
-    return AntColony(n_ants, ants, α, β, ρ, n_nodes, start_node, end_node)
+    return AntColony(n_ants, ants, τmin, τmax, α, β, ρ, n_nodes, start_node, end_node)
 end
 
 mutable struct ColonyState{T} <: State
@@ -40,7 +42,7 @@ function initialize(method::AntColony, cost)
     n_nodes,_ = size(cost[1])
     map(a -> a.fitness = fill(0.0, n_obj), method.ants)
     map(a -> a.path = fill(0, n_nodes), method.ants) 
-    τ = map(x -> zero(x) .+ 1.0, cost)
+    τ = map(x -> zero(x) .+ method.τmax, cost)
     η = map(x -> median(x, dims=2) ./ x, cost)
     θ = zero.(cost)
     scheme = Scheme{n_obj}(0.1, is_minimizing=true)
@@ -97,23 +99,25 @@ end
 
 function set_pheremones!(method, state, best_ants)
     @unpack τ,n_obj = state
-    @unpack ρ = method
+    @unpack ρ,τmin,τmax = method
     for obj in 1:n_obj
         current_fit = best_ants.current[obj].fitness[obj]
         best_fit = best_ants.all[obj].fitness[obj]
         path = best_ants.current[obj].path
-        set_pheremones!(τ[obj], ρ, current_fit, best_fit, path)
+        set_pheremones!(τ[obj], ρ, τmin, τmax, current_fit, best_fit, path)
     end
     return nothing
 end
 
-function set_pheremones!(τ, ρ, current_fit, best_fit, path)
+function set_pheremones!(τ, ρ, τmin, τmax, current_fit, best_fit, path)
     τ .*= (1 - ρ)
     τΔ = 1 / (1 + current_fit - best_fit)
     for i in 1:(length(path) - 1)
         n0,n1 = path[i],path[i + 1]
         τ[n0,n1] += τΔ
     end
+    τ .= min.(τ, τmax)
+    τ .= max.(τ, τmin)
     return nothing
 end
 

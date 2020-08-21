@@ -4,6 +4,7 @@ authors = ["itsdfish <itsdfish@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Fitness = "858300c5-970a-4e29-886d-8a2e2ea98c42"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
