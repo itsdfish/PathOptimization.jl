@@ -5,9 +5,10 @@ module AntColonyOptimization
     export AntColony, Ant, ColonyState, optimize!, find_path!, select_best_ants
     export initialize, set_pheremones!, compute_probabilities!, set_pheremones!
     export pfind_paths!, find_path!, get_best_ants, compute_probabilities!, store_solutions!
-    export RandomSearch
+    export RandomSearch, NearestNeighbor
 
     include("api.jl")
     include("AntColony.jl")
     include("RandomSearch.jl")
+    include("NearestNeighbor.jl")
 end

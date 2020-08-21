@@ -6,7 +6,7 @@ n_obj = 2
 n_nodes = 50
 cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
 iterations = 10_000
-method = RandomSearch(n_nodes=n_nodes)
+method = NearestNeighbor(n_nodes=n_nodes)
 options = (trace = true, parallel = true, progress = false)
 @elapsed result = optimize!(method, cost, iterations; options...)
 

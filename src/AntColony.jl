@@ -79,7 +79,7 @@ function find_path!(method::AntColony, state, ant, rng)
     fitness .= 0.0
     path[1],path[end] = start_node,end_node
     visited = fill(false, n_nodes)
-    visited[[1,end]] .= true
+    visited[[start_node,end_node]] .= true
     n0 = start_node
     for n in 2:(n_nodes - 1)
         obj_idx = rand(1:n_obj)
