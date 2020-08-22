@@ -1,3 +1,9 @@
+"""
+Ant object for ant colony optimization
+*  `fitness`: array of fitness values where each element corresponds to fitness of
+each objective
+* `path`: an ordered array of nodes representing a path.
+"""
 mutable struct Ant
     fitness::Array{Float64,1}
     path::Array{Int,1}
@@ -5,6 +11,25 @@ end
 
 Ant() = Ant(Float64[], Int[])
 
+"""
+`AntColony!` is an object that holds the parameters of the ant colony optimization algorithm.
+* `n_ants::Int`: the number of ants in the colony
+* `ants::Vector{Ant}`: a vector of ants
+* `τmin::Float64`: the minimum path pheremone value
+* `τmax::Float64`: the maximum path pheremone value
+* `α::Float64`: (1) the influence of the pheremone trail on path finding
+* `β::Float64`: (1) the influence of local heuristics on path finding
+* `ρ::Float64`: (.1) decay rate of the pheremone trial
+* `n_nodes::Int`: the number of nodes in the path
+* `start_node::Int`: (1) the starting node of a path
+* `end_node::Int`: (n_nodes) the ending node of a path
+
+Example: 
+```@example
+method = AntColony(n_ants=100, n_nodes=20, β=4.0, ρ=.10,
+    τmin=0.0, τmax=10.0)
+```
+"""
 struct AntColony <: PathFinder
     n_ants::Int
     ants::Vector{Ant}
@@ -18,11 +43,21 @@ struct AntColony <: PathFinder
     end_node::Int
 end
 
-function AntColony(;n_ants=20, τmin=1.0, τmax=5.0, α=1.0, β=1.0, ρ=0.1, n_nodes=10,
+function AntColony(;n_ants=20, τmin=1.0, τmax=10.0, α=1.0, β=1.0, ρ=0.1, n_nodes=10,
     start_node=1, end_node=n_nodes, retain_solutions=false)
     ants = [Ant() for _ in 1:n_ants]
     return AntColony(n_ants, ants, τmin, τmax, α, β, ρ, n_nodes, start_node, end_node)
 end
+
+"""
+`AntColony!` is an object that holds the parameters of the ant colony optimization algorithm.
+* `n_obj::Int`: the number of objective
+* `τ::Array{Array{Float64,2},1}`: array of pheremone matrices corresponding to each objective
+* `η::Array{Array{Float64,2},1}`: array of local heuristics
+* `cost::Array{Array{Float64,2},1}`: an array of cost matrices
+* `θ::Array{Array{Float64,2},1}`: array of probability matrices, one matrix for each objective 
+* `frontier::T`: the Pareto frontier
+"""
 
 mutable struct ColonyState{T} <: State
     n_obj::Int
@@ -56,13 +91,13 @@ function pfind_paths!(method::AntColony, state, rngs)
     @threads for ant in method.ants 
         rng = rngs[threadid()]
         find_path!(method, state, ant, rng)
-    end
+end
 end
 
 function find_paths!(method::AntColony, state, args...)
     for ant in method.ants
         find_path!(method, state, ant)
-    end
+end
 end
 
 find_path!(method::AntColony, state, ant) = find_path!(method, state, ant, Random.GLOBAL_RNG)
@@ -84,14 +119,14 @@ function find_path!(method::AntColony, state, ant, rng)
     visited[[start_node,end_node]] .= true
     n0 = start_node
     for n in 2:(n_nodes - 1)
-        obj_idx = rand(1:n_obj)
+        obj_idx = rand(rng, 1:n_obj)
         w = θ[obj_idx][n0,:]
         w[visited] .= 0.0
         n1 = sample(rng, 1:n_nodes, Weights(w))
         visited[n1] = true
         path[n] = n1
         map!(i -> fitness[i] += cost[i][n0,n1], fitness, 1:n_obj) 
-        n0 = n1
+    n0 = n1
     end
     map!(i -> fitness[i] += cost[i][n0,end_node], fitness, 1:n_obj) 
     return nothing
@@ -125,8 +160,8 @@ function get_best_ants(method, state)
     ants = method.ants
     ant = ants[1]
     n_obj = length(ant.fitness)
-    arr = Array{typeof(ant),1}()
-    best_ants = (current = arr, all = arr)
+    arr = Array{typeof(ant),1}
+    best_ants = (current = arr(), all = arr())
     all_paths = get_best_paths(state.frontier)
     frontier = get_best_cost(state.frontier)
     for obj in 1:n_obj
@@ -147,8 +182,8 @@ function get_min(f::Function, array)
         if x < mv 
             mv = x
             mo = a
-            idx = i
-        end 
+        idx = i
+    end 
     end 
     return mo,idx
 end
@@ -158,7 +193,7 @@ function compute_probabilities!(method, state)
     @unpack α,β = method
     for (θ′, τ′, η′) in zip(θ, τ, η)
         compute_probabilities!(θ′, τ′, η′, α, β)
-    end
+end
 end
 
 function compute_probabilities!(θ, τ, η, α, β)

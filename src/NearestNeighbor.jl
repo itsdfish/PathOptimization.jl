@@ -46,7 +46,7 @@ function find_path!(method::NearestNeighbor, state::NearestState, rng)
     deleteat!(not_visited, [start_node,end_node])
     n0 = start_node
     for n in 2:(n_nodes - 1)
-        obj_idx = rand(1:n_obj)
+        obj_idx = rand(rng, 1:n_obj)
         v = @view cost[obj_idx][n0,not_visited]
         _,min_idx = findmin(v)
         n1 = not_visited[min_idx]

@@ -46,7 +46,7 @@ function find_path!(method::RandomSearch, state::RandomState, rng)
     w[[start_node,end_node]] .= 0.0
     n0 = start_node
     for n in 2:(n_nodes - 1)
-        obj_idx = rand(1:n_obj)
+        obj_idx = rand(rng, 1:n_obj)
         n1 = sample(rng, 1:n_nodes, Weights(w))
         w[n1] = 0.0
         path[n] = n1
