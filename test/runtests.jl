@@ -89,7 +89,7 @@ end
     cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
     iterations = 1000
     method = AntColony(n_ants=100, n_nodes=n_nodes, β=4.0)
-    options = (trace = true, parallel = true, progress = false)
+    options = (parallel = true, progress = false)
     result = optimize!(method, cost, iterations; options...)
     @test true
 end
@@ -103,7 +103,7 @@ end
     cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
     iterations = 10_000
     method = RandomSearch(n_nodes=n_nodes)
-    options = (trace = true, parallel = true, progress = false)
+    options = (parallel = true, progress = false)
     result = optimize!(method, cost, iterations; options...)
     @test true
 end
@@ -117,7 +117,7 @@ end
     cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
     iterations = 10_000
     method = NearestNeighbor(n_nodes=n_nodes)
-    options = (trace = true, parallel = true, progress = false)
+    options = (parallel = true, progress = false)
     result = optimize!(method, cost, iterations; options...)
     @test true
 end
