@@ -3,9 +3,8 @@
 A Julia package for path optimization.
 
 # Example
-
+In the example below, ant colony optimization is used to find the Pareto frontier a path with two objective cost functions. 
 ```@julia
-cd(@__DIR__)
 using Revise, AntColonyOptimization, Distributions, Random, Plots
 using Fitness
 Random.seed!(5214)
