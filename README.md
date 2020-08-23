@@ -19,8 +19,8 @@ options = (parallel = true, progress = false)
 
 frontier = get_best_cost(result.frontier)
 pyplot()
-scatter(frontier, grid=false, leg=false, ylims=(0,1000), xlims=(0,1000),
-    size=(800,600), markersize=7, markerstrokewidth=2, color=:purple, xlabel="Cost 1",
+scatter(frontier, grid=false, leg=false, ylims=(0,800), xlims=(0,800),
+    size=(600,400), markersize=7, markerstrokewidth=2, color=:purple, xlabel="Cost 1",
      ylabel="Cost 2", xaxis=font(12), yaxis=font(12))
 ```
 
