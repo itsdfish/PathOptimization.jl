@@ -90,7 +90,7 @@ end
     iterations = 1000
     method = AntColony(n_ants=100, n_nodes=n_nodes, β=4.0)
     options = (parallel = true, progress = false)
-    result = optimize!(method, cost, iterations; options...)
+    result = optimize(method, cost, iterations; options...)
     @test true
 end
 
@@ -104,7 +104,7 @@ end
     iterations = 10_000
     method = RandomSearch(n_nodes=n_nodes)
     options = (parallel = true, progress = false)
-    result = optimize!(method, cost, iterations; options...)
+    result = optimize(method, cost, iterations; options...)
     @test true
 end
 
@@ -118,7 +118,7 @@ end
     iterations = 10_000
     method = NearestNeighbor(n_nodes=n_nodes)
     options = (parallel = true, progress = false)
-    result = optimize!(method, cost, iterations; options...)
+    result = optimize(method, cost, iterations; options...)
     @test true
 end
 
@@ -139,4 +139,35 @@ end
     best_ants = get_best_ants(method, state)
     @test length(best_ants.current) == 2
     @test length(best_ants.all) == 2
+    @test ants[2] in best_ants.current
+    @test ants[3] in best_ants.current
+    @test ants[2] in best_ants.all
+    @test ants[3] in best_ants.all  
+end
+
+@safetestset "pheremone" begin 
+    using AntColonyOptimization, Distributions, Random
+    using Test
+    Random.seed!(95590)
+    n_obj = 1
+    n_nodes = 5
+    cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
+    method = AntColony(n_nodes=n_nodes, n_ants=1)
+    state = initialize(method, cost)
+    path = [1,3,2,4,5]
+    current_fit = 2.0
+    best_fit = 1.0
+    τ = state.τ[1]
+    τ .= 2.0
+    set_pheremones!(τ, method.ρ, method.τmin, method.τmax, current_fit, best_fit, path)
+    for i in 1:4
+        @test τ[path[i],path[i + 1]] == 2.3
+    end
+    @test count(x -> x == 1.8, τ) == 21
+    τ .= 12.0
+    set_pheremones!(τ, method.ρ, method.τmin, method.τmax, current_fit, best_fit, path)
+    @test all(x -> x == 10.0, τ)
+    τ .= -2.0
+    set_pheremones!(τ, method.ρ, method.τmin, method.τmax, current_fit, best_fit, path)
+    @test all(x -> x == 1.0, τ)
 end

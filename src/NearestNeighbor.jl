@@ -1,3 +1,15 @@
+"""
+`NearestNeighbor` is an object that holds the parameters of the nearest neighbor optimization algorithm.
+
+* `n_nodes::Int`: the number of nodes in the path
+* `start_node::Int`: (1) the starting node of a path
+* `end_node::Int`: (n_nodes) the ending node of a path
+
+Example: 
+```@example
+method = NearestNeighbor(n_nodes=20)
+```
+"""
 struct NearestNeighbor <: PathFinder
     n_nodes::Int
     start_node::Int
@@ -6,6 +18,13 @@ end
 
 NearestNeighbor(;n_nodes, start_node=1, end_node=n_nodes) = NearestNeighbor(n_nodes, start_node, end_node)
 
+"""
+`AntColony!` is an object that holds the parameters of the ant colony optimization algorithm.
+* `n_obj::Int`: the number of objective
+* `cost::Array{Array{Float64,2},1}`: an array of cost matrices
+* `frontier::T`: the Pareto frontier
+* `path::Array{Int,1}`: current best path
+"""
 mutable struct NearestState{T} <: State
     n_obj::Int
     cost::Array{Array{Float64,2},1}
@@ -14,6 +33,11 @@ mutable struct NearestState{T} <: State
     path::Array{Int,1}
 end
 
+"""
+initialize the nearest neighbor algorithm and return state object
+* `method`: nearest neighbor object
+* `cost`: array of cost matrices
+"""
 function initialize(method::NearestNeighbor, cost::Array{Float64,2})
     return initialize(method, [cost])
 end
@@ -28,6 +52,12 @@ function initialize(method::NearestNeighbor, cost)
     return state
 end
 
+"""
+Parallel search not supported for nearest neighbor
+* `method`: nearest neighbor object
+* `state`: nearest neighbor object
+*  `rngs`: array of random number generators, one for each thread.
+"""
 function pfind_paths!(method::NearestNeighbor, state, rngs)
     find_path!(method, state)
 end
@@ -38,6 +68,12 @@ end
 
 find_path!(method::NearestNeighbor, state::NearestState) = find_path!(method, state, Random.GLOBAL_RNG)
 
+"""
+Find path for nearest neigbhor
+* `method`: nearest neigbhor object
+* `state`: algorithm state object
+*  `rng`: a random number generator object.
+"""
 function find_path!(method::NearestNeighbor, state::NearestState, rng)
     @unpack n_obj,fitness,path,cost = state
     @unpack n_nodes,start_node,end_node = method

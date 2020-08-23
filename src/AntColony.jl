@@ -11,6 +11,17 @@ end
 
 Ant() = Ant(Float64[], Int[])
 
+import Base: ==
+
+function ==(a1::Ant, a2::Ant)
+    for f in fieldnames(Ant)
+        if getfield(a1, f) != getfield(a2, f)
+            return false
+        end
+    end
+    return true
+end
+
 """
 `AntColony!` is an object that holds the parameters of the ant colony optimization algorithm.
 * `n_ants::Int`: the number of ants in the colony
@@ -50,7 +61,7 @@ function AntColony(;n_ants=20, τmin=1.0, τmax=10.0, α=1.0, β=1.0, ρ=0.1, n_
 end
 
 """
-`AntColony!` is an object that holds the parameters of the ant colony optimization algorithm.
+`ColonyState!` is an object that holds the state of the ant colony algorithm.
 * `n_obj::Int`: the number of objective
 * `τ::Array{Array{Float64,2},1}`: array of pheremone matrices corresponding to each objective
 * `η::Array{Array{Float64,2},1}`: array of local heuristics
@@ -67,6 +78,12 @@ mutable struct ColonyState{T} <: State
     θ::Array{Array{Float64,2},1}
     frontier::T
 end
+
+"""
+initialize ant colony algorithm and return ant colony state object
+* `method`: ant colony object
+* `cost`: array of cost matrices
+"""
 
 function initialize(method::AntColony, cost::Array{Float64,2})
     return initialize(method, [cost])
@@ -87,21 +104,39 @@ function initialize(method::AntColony, cost)
     return state
 end
 
+"""
+Find path for each ant in parallel.
+* `method`: ant colony object
+* `state`: colony state object
+*  `rngs`: array of random number generators, one for each thread.
+"""
+
 function pfind_paths!(method::AntColony, state, rngs)
     @threads for ant in method.ants 
         rng = rngs[threadid()]
         find_path!(method, state, ant, rng)
+    end
 end
-end
+
+"""
+Find path for each ant.
+* `method`: ant colony object
+* `state`: colony state object
+"""
 
 function find_paths!(method::AntColony, state, args...)
     for ant in method.ants
         find_path!(method, state, ant)
-end
+    end
 end
 
 find_path!(method::AntColony, state, ant) = find_path!(method, state, ant, Random.GLOBAL_RNG)
 
+"""
+Find best ant, set pheremones and compute new transition probabilities
+* `method`: ant colony object
+* `state`: colony state object
+"""
 function update!(method::AntColony, state::ColonyState)
     store_solutions!(method, state)
     best_ants = get_best_ants(method, state)
@@ -109,6 +144,13 @@ function update!(method::AntColony, state::ColonyState)
     compute_probabilities!(method, state)
 end
 
+"""
+Find path for an individual ant.
+* `method`: ant colony object
+* `state`: colony state object
+* `ant`: a single ant
+*  `rng`: a random number generator object.
+"""
 function find_path!(method::AntColony, state, ant, rng)
     @unpack start_node, end_node, n_nodes = method
     @unpack path,fitness = ant
@@ -126,12 +168,18 @@ function find_path!(method::AntColony, state, ant, rng)
         visited[n1] = true
         path[n] = n1
         map!(i -> fitness[i] += cost[i][n0,n1], fitness, 1:n_obj) 
-    n0 = n1
+        n0 = n1
     end
     map!(i -> fitness[i] += cost[i][n0,end_node], fitness, 1:n_obj) 
     return nothing
 end
 
+"""
+Find path for an individual ant.
+* `method`: ant colony object
+* `state`: colony state object
+* `best_ants`: best ants for current iteration and all iterations
+"""
 function set_pheremones!(method, state, best_ants)
     @unpack τ,n_obj = state
     @unpack ρ,τmin,τmax = method
@@ -156,6 +204,11 @@ function set_pheremones!(τ, ρ, τmin, τmax, current_fit, best_fit, path)
     return nothing
 end
 
+"""
+Find best ants for current iteration and all iterations.
+* `method`: ant colony object
+* `state`: colony state object
+"""
 function get_best_ants(method, state)
     ants = method.ants
     ant = ants[1]
@@ -182,18 +235,23 @@ function get_min(f::Function, array)
         if x < mv 
             mv = x
             mo = a
-        idx = i
-    end 
+            idx = i
+        end 
     end 
     return mo,idx
 end
 
+"""
+Compute transition matrices using pheremone and local heuristic matrices
+* `method`: ant colony object
+* `state`: colony state object
+"""
 function compute_probabilities!(method, state)
     @unpack θ,τ,η = state
     @unpack α,β = method
     for (θ′, τ′, η′) in zip(θ, τ, η)
         compute_probabilities!(θ′, τ′, η′, α, β)
-end
+    end
 end
 
 function compute_probabilities!(θ, τ, η, α, β)
@@ -201,6 +259,11 @@ function compute_probabilities!(θ, τ, η, α, β)
     θ ./= sum(θ, dims=2)
 end
 
+"""
+Add non-dominated solutions to Pareto frontier
+* `method`: ant colony object
+* `state`: colony state object
+"""
 function store_solutions!(method, state)
     T = NTuple{state.n_obj,Float64}
     for ant in method.ants
@@ -210,4 +273,4 @@ function store_solutions!(method, state)
     return nothing
 end
 
-get_fitness(ant) = ant.fitness
+get_fitness(ant) = ant.fitness  

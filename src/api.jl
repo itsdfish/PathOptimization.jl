@@ -35,7 +35,7 @@ options = (parallel = true, progress = false)
 result = optimize!(method, cost, iterations; options...)
 ```
 """
-function optimize!(method::PathFinder, cost, iterations; parallel=true,
+function optimize(method::PathFinder, cost, iterations; parallel=true,
     progress=false)
     meter = Progress(iterations)
     state = initialize(method, cost)

@@ -8,7 +8,7 @@ cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj]
 iterations = 10_000
 method = RandomSearch(n_nodes=n_nodes)
 options = (trace = true, parallel = true, progress = false)
-@elapsed result = optimize!(method, cost, iterations; options...)
+@elapsed result = optimize(method, cost, iterations; options...)
 
 frontier = get_best_cost(result.frontier)
 pyplot()
