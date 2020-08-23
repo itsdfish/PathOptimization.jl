@@ -24,4 +24,4 @@ scatter(frontier, grid=false, leg=false, ylims=(0,800), xlims=(0,800),
      ylabel="Cost 2", xaxis=font(12), yaxis=font(12))
 ```
 
-![](Examples/example.png =600x400)
+<img src="Examples/example.png" alt="drawing" width="600" height="400/>
