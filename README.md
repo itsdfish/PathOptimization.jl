@@ -1,4 +1,4 @@
-# AntColonyOptimization
+# PathOptimization
 
 A Julia package for path optimization.
 
