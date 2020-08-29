@@ -1,5 +1,5 @@
 cd(@__DIR__)
-using Revise, AntColonyOptimization, Distributions, Random, Plots
+using Revise, PathOptimization, Distributions, Random, Plots
 using Fitness
 Random.seed!(5214)
 n_obj = 2

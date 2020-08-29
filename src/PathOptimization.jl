@@ -1,4 +1,4 @@
-module AntColonyOptimization
+module PathOptimization
     using Parameters, StatsFuns, StatsBase, Statistics, Random, ProgressMeter
     using Fitness
     import Base.Threads: @threads, nthreads, threadid

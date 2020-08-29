@@ -1,4 +1,4 @@
-name = "AntColonyOptimization"
+name = "PathOptimization"
 uuid = "21b4f739-9e68-4837-8709-b1186add84d5"
 authors = ["itsdfish <itsdfish@gmail.com> and contributors"]
 version = "0.1.0"

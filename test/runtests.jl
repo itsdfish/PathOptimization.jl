@@ -1,7 +1,7 @@
 using SafeTestsets
 
 @safetestset "ant colony find path" begin 
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(95590)
     n_obj = 2
@@ -29,7 +29,7 @@ using SafeTestsets
 end
 
 @safetestset "nearest neighbor find path" begin 
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(95590)
     n_obj = 2
@@ -55,7 +55,7 @@ end
 end
 
 @safetestset "random find path" begin 
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(95590)
     n_obj = 2
@@ -81,7 +81,7 @@ end
 end
 
 @safetestset "Ant Colony Run" begin
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(514074)
     n_obj = 2
@@ -95,7 +95,7 @@ end
 end
 
 @safetestset "Random Search Run" begin
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(514074)
     n_obj = 2
@@ -109,7 +109,7 @@ end
 end
 
 @safetestset "Nearest Neighbor Run" begin
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(514074)
     n_obj = 2
@@ -123,7 +123,7 @@ end
 end
 
 @safetestset "best ant" begin 
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(95590)
     n_obj = 2
@@ -146,7 +146,7 @@ end
 end
 
 @safetestset "pheremone" begin 
-    using AntColonyOptimization, Distributions, Random
+    using PathOptimization, Distributions, Random
     using Test
     Random.seed!(95590)
     n_obj = 1

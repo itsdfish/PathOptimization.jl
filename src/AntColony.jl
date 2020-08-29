@@ -115,7 +115,7 @@ function pfind_paths!(method::AntColony, state, rngs)
     @threads for ant in method.ants 
         rng = rngs[threadid()]
         find_path!(method, state, ant, rng)
-    end
+end
 end
 
 """
@@ -127,7 +127,7 @@ Find path for each ant.
 function find_paths!(method::AntColony, state, args...)
     for ant in method.ants
         find_path!(method, state, ant)
-    end
+end
 end
 
 find_path!(method::AntColony, state, ant) = find_path!(method, state, ant, Random.GLOBAL_RNG)
@@ -211,13 +211,11 @@ Find best ants for current iteration and all iterations.
 """
 function get_best_ants(method, state)
     ants = method.ants
-    ant = ants[1]
-    n_obj = length(ant.fitness)
-    arr = Array{typeof(ant),1}
+    arr = Array{Ant,1}
     best_ants = (current = arr(), all = arr())
     all_paths = get_best_paths(state.frontier)
     frontier = get_best_cost(state.frontier)
-    for obj in 1:n_obj
+    for obj in 1:state.n_obj
         min_ant,_ = get_min(x -> x.fitness[obj], ants)
         push!(best_ants.current, min_ant)
         mn_obj,idx = get_min(x -> x[obj], frontier)
@@ -236,7 +234,7 @@ function get_min(f::Function, array)
             mv = x
             mo = a
             idx = i
-        end 
+    end 
     end 
     return mo,idx
 end
@@ -251,7 +249,7 @@ function compute_probabilities!(method, state)
     @unpack α,β = method
     for (θ′, τ′, η′) in zip(θ, τ, η)
         compute_probabilities!(θ′, τ′, η′, α, β)
-    end
+end
 end
 
 function compute_probabilities!(θ, τ, η, α, β)
@@ -265,10 +263,10 @@ Add non-dominated solutions to Pareto frontier
 * `state`: colony state object
 """
 function store_solutions!(method, state)
-    T = NTuple{state.n_obj,Float64}
+    # T = NTuple{state.n_obj,Float64}
     for ant in method.ants
-        fitness::T = Tuple(get_fitness(ant)) 
-        add_candidate!(state.frontier, fitness, ant.path, 2)
+        # fitness::T = Tuple(get_fitness(ant)) 
+        add_candidate!(state.frontier, Tuple(ant.fitness), ant.path, 2)
     end
     return nothing
 end
