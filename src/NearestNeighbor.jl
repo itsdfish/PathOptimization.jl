@@ -4,6 +4,7 @@
 * `n_nodes::Int`: the number of nodes in the path
 * `start_node::Int`: (1) the starting node of a path
 * `end_node::Int`: (n_nodes) the ending node of a path
+* `use2opt`: use 2-opt algorithm if true
 
 Example: 
 ```@example
@@ -17,8 +18,8 @@ struct NearestNeighbor <: PathFinder
     use2opt::Bool
 end
 
-function NearestNeighbor(;n_nodes, start_node=1, end_node=n_nodes, use_opt=false) 
-    return NearestNeighbor(n_nodes, start_node, end_node, use_opt)
+function NearestNeighbor(;n_nodes, start_node=1, end_node=n_nodes, use2opt=false) 
+    return NearestNeighbor(n_nodes, start_node, end_node, use2opt)
 end
 """
 `AntColony!` is an object that holds the parameters of the ant colony optimization algorithm.
@@ -61,12 +62,12 @@ Parallel search not supported for nearest neighbor
 *  `rngs`: array of random number generators, one for each thread.
 """
 function pfind_paths!(method::NearestNeighbor, state, rngs)
-    find_path!(method, state)
+    find_paths!(method, state)
 end
 
 function find_paths!(method::NearestNeighbor, state, args...)
     find_path!(method, state)
-    method.use_2opt ? two_opt(state) : nothing
+    method.use2opt ? two_opt(state) : nothing
 end
 
 find_path!(method::NearestNeighbor, state::NearestState) = find_path!(method, state, Random.GLOBAL_RNG)

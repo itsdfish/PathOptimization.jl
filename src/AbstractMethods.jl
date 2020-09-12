@@ -12,16 +12,18 @@ function two_opt(state::State)
     state.fitness = compute_path_cost(state)
 end
 
-function two_opt(path, cost)
+function two_opt(path, cost, max_evals=1000)
     n = length(path)
     temp_path = copy(path)
     searching = true
-    while searching
+    n_evals = 0
+    while searching && (n_evals ≤ max_evals)
         searching = false
         for r in 2:(n-1)
             for c in (r+1):(n-1)
+                n_evals += 1
                 δ = map(x->relative_cost(temp_path, x, r, c), cost)
-                if any(x < 0.0 , δ)
+                if any(x->x < 0.0 , δ)
                     searching = true
                     reverse!(temp_path, r, c)
                     break 

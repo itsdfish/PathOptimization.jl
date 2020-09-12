@@ -6,8 +6,8 @@ n_obj = 2
 n_nodes = 50
 cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
 iterations = 10_000
-method = NearestNeighbor(n_nodes=n_nodes)
-options = (parallel = true, progress = false)
+method = NearestNeighbor(n_nodes=n_nodes, use2opt=true)
+options = (parallel = false, progress = false)
 @elapsed result = optimize(method, cost, iterations; options...)
 
 frontier = get_best_cost(result.frontier)
