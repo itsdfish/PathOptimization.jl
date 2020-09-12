@@ -53,12 +53,14 @@ struct AntColony <: PathFinder
     n_nodes::Int
     start_node::Int
     end_node::Int
+    use2opt::Bool
 end
 
 function AntColony(;n_ants=20, τmin=1.0, τmax=10.0, α=1.0, β=1.0, ρ=0.1, max_no_change=50, n_nodes=10,
-    start_node=1, end_node=n_nodes)
+    start_node=1, end_node=n_nodes, use2opt=false)
     ants = [Ant() for _ in 1:n_ants]
-    return AntColony(n_ants, ants, τmin, τmax, α, β, ρ, max_no_change, n_nodes, start_node, end_node)
+    return AntColony(n_ants, ants, τmin, τmax, α, β, ρ, max_no_change, n_nodes, start_node, end_node,
+        use2opt)
 end
 
 """
@@ -116,7 +118,8 @@ function pfind_paths!(method::AntColony, state, rngs)
     @threads for ant in method.ants 
         rng = rngs[threadid()]
         find_path!(method, state, ant, rng)
-end
+    end
+    method.use2opt ? two_opt(method, state) : nothing
 end
 
 """
@@ -128,10 +131,19 @@ Find path for each ant.
 function find_paths!(method::AntColony, state, args...)
     for ant in method.ants
         find_path!(method, state, ant)
-end
+    end
+    method.use2opt ? two_opt(method, state) : nothing
 end
 
 find_path!(method::AntColony, state, ant) = find_path!(method, state, ant, Random.GLOBAL_RNG)
+
+function two_opt(method::AntColony, state)
+    for obj in 1:state.n_obj
+        ant,_ = findmin(x->x.fitness[obj], method.ants)
+        ant.path = two_opt(ant.path, state.cost)
+        ant.fitness = compute_path_cost(ant.path, state.cost)
+    end
+end
 
 """
 Find best ant, set pheremones and compute new transition probabilities
@@ -236,7 +248,7 @@ function get_min(f::Function, array)
             mv = x
             mo = a
             idx = i
-    end 
+        end 
     end 
     return mo,idx
 end
@@ -251,7 +263,7 @@ function compute_probabilities!(method, state)
     @unpack α,β = method
     for (θ′, τ′, η′) in zip(θ, τ, η)
         compute_probabilities!(θ′, τ′, η′, α, β)
-end
+    end
 end
 
 function compute_probabilities!(θ, τ, η, α, β)

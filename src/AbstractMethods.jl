@@ -62,3 +62,16 @@ function compute_path_cost(path, cost::Array{Float64,2})
     end
     return c
 end
+
+function findmin(fun::Function, X)
+    min_val = fun(X[1])
+    min_idx = 1
+    for (i,x) in enumerate(X)
+        val = fun(x)
+        if val < min_val 
+            min_val = val
+            min_idx = i
+        end
+    end
+    return X[min_idx],min_idx
+end

@@ -27,13 +27,38 @@ scatter(frontier, grid=false, leg=false, ylims=(0,800), xlims=(0,800),
 
 # API
 
-The package PathOptimizaiton.jl has a lightweight API, requring only two objects and four methods.
+The package PathOptimizaiton.jl provides a lightweight API for adding new algorithms, which only requires two objects and four methods. Additional methods can be called from the four required methods. A minimal working example can be found in src/RandomSearch.jl and Examples/Random_Search_Example.jl.
 
 ## Objects
 
-Each algorithm is defined by a subtype of PathFinder, which contains parameters of the algorithm, and a subytype of State, which contains state information such as Pareto frontier and cost matrices. 
+### PathFinder
+
+Parameters of each algorithm are defined in a subtype of PathFinder. For example:
+
+```@julia
+struct RandomSearch <: PathFinder
+    n_nodes::Int
+    start_node::Int
+    end_node::Int
+end
+```
+
+### State
+
+The state of each algorithm is tracked in a subtype of State. Here is a simple example:
+
+```@julia
+mutable struct RandomState{T} <: State
+    n_obj::Int
+    cost::Array{Array{Float64,2},1}
+    frontier::T
+    fitness::Array{Float64,1}
+    path::Array{Int,1}
+end
+```
 
 ## Methods
+
 
 ### initialize
 
