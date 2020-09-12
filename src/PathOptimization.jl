@@ -11,4 +11,5 @@ module PathOptimization
     include("AntColony.jl")
     include("RandomSearch.jl")
     include("NearestNeighbor.jl")
+    include("AbstractMethods.jl")
 end

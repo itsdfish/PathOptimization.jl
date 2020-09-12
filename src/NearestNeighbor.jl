@@ -14,10 +14,12 @@ struct NearestNeighbor <: PathFinder
     n_nodes::Int
     start_node::Int
     end_node::Int
+    use2opt::Bool
 end
 
-NearestNeighbor(;n_nodes, start_node=1, end_node=n_nodes) = NearestNeighbor(n_nodes, start_node, end_node)
-
+function NearestNeighbor(;n_nodes, start_node=1, end_node=n_nodes, use_opt=false) 
+    return NearestNeighbor(n_nodes, start_node, end_node, use_opt)
+end
 """
 `AntColony!` is an object that holds the parameters of the ant colony optimization algorithm.
 * `n_obj::Int`: the number of objective
@@ -64,6 +66,7 @@ end
 
 function find_paths!(method::NearestNeighbor, state, args...)
     find_path!(method, state)
+    method.use_2opt ? two_opt(state) : nothing
 end
 
 find_path!(method::NearestNeighbor, state::NearestState) = find_path!(method, state, Random.GLOBAL_RNG)
@@ -98,11 +101,6 @@ end
 function update!(method::NearestNeighbor, state)
     store_solutions!(method, state)
     reset_state!(state)
-end
-
-function store_solutions!(method::NearestNeighbor, state)
-    add_candidate!(state.frontier, Tuple(state.fitness), state.path, 2)
-    return nothing
 end
 
 function reset_state!(state::NearestState)

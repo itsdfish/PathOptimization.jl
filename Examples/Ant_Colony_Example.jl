@@ -6,7 +6,7 @@ n_obj = 2
 n_nodes = 25
 cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
 iterations = 2000
-method = AntColony(n_ants=100, n_nodes=n_nodes, β=4.0)
+method = AntColony(n_ants=100, n_nodes=n_nodes, β=4.0, max_no_change=50)
 options = (parallel = true, progress = false)
 result = optimize(method, cost, iterations; options...)
 

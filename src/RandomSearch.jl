@@ -62,11 +62,6 @@ function update!(method::RandomSearch, state)
     reset_state!(state)
 end
 
-function store_solutions!(method::RandomSearch, state)
-    add_candidate!(state.frontier, Tuple(state.fitness), state.path, 2)
-    return nothing
-end
-
 function reset_state!(state::RandomState)
     state.fitness .= 0.0
     state.path .= 0

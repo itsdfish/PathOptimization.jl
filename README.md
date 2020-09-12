@@ -24,3 +24,45 @@ scatter(frontier, grid=false, leg=false, ylims=(0,800), xlims=(0,800),
 ```
 
 <img src="Examples/example.png" alt="" width="600" height="400">
+
+# API
+
+The package PathOptimizaiton.jl has a lightweight API, requring only two objects and four methods.
+
+## Objects
+
+Each algorithm is defined by a subtype of PathFinder, which contains parameters of the algorithm, and a subytype of State, which contains state information such as Pareto frontier and cost matrices. 
+
+## Methods
+
+### initialize
+
+The initialize function sets up the Pareto fronier, and other algorithmic specific configurations, and returns the state object.
+
+```@julia
+initialize(method::M, cost)
+```
+
+### find_paths!
+
+A single threaded method that finds a path each iteration.
+
+```@julia
+d_paths!(method::M, state, args...)
+```
+
+### pfind_paths!
+
+An optional multithreaded method that finds a path on each iteration.
+
+```@julia
+pfind_paths!(method::RandomSearch, state, rngs)
+```
+
+### update!
+
+A method for updating the algorithm and state
+
+```@julia
+update!(method::M, state)
+```
