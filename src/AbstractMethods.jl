@@ -23,7 +23,7 @@ function two_opt(path, cost, max_evals=1000)
             for c in (r+1):(n-1)
                 n_evals += 1
                 δ = map(x->relative_cost(temp_path, x, r, c), cost)
-                if any(x->x < 0.0 , δ)
+                if all(x->x < 0.0 , δ)
                     searching = true
                     reverse!(temp_path, r, c)
                     break 
