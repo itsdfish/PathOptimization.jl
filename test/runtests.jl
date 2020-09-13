@@ -171,3 +171,49 @@ end
     set_pheremones!(τ, method.ρ, method.τmin, method.τmax, current_fit, best_fit, path)
     @test all(x -> x == 1.0, τ)
 end
+
+@safetestset "find min via function" begin 
+    using PathOptimization, Distributions, Random
+    using Test
+    n_nodes = 10
+    method = AntColony(n_nodes=n_nodes, n_ants=3)
+    ants = method.ants
+    ants[1].fitness = [2.0,1.0]
+    ants[2].fitness = [1.0,0.0]
+    ants[3].fitness = [0.0,1.0]
+    _,min_idx = findmin(x->x.fitness[1], ants)
+    @test min_idx == 3
+end
+
+@safetestset "2-opt" begin 
+    using PathOptimization, Random
+    import PathOptimization: two_opt, compute_path_cost
+    using Test
+    Random.seed!(584410)
+    costs = [rand(10,10)]
+    path = [1:10;]
+    path1 = two_opt(path, costs)
+    path2 = two_opt(path, costs)
+    path_cost = compute_path_cost(path, costs)
+    path1_costs = compute_path_cost(path1, costs)
+    @test path1 == path2
+    @test path_cost > path1_costs
+end
+
+@safetestset "relative cost" begin 
+    using PathOptimization, Random
+    import PathOptimization: relative_cost, compute_path_cost
+    using Test
+    Random.seed!(6540)
+    n_nodes = 10
+    costs = [rand(n_nodes, n_nodes)]
+    for r in 2:(n_nodes-1), c in (r+1):(n_nodes-1)
+        path = [1:10;]
+        rel_cost = relative_cost(path, costs[1], r, c)
+        cost1 = compute_path_cost(path, costs)[1]
+        reverse!(path, r, c)
+        cost2 = compute_path_cost(path, costs)[1]
+        diff_cost = cost2 - cost1
+        @test diff_cost ≈ rel_cost rtol = .0001
+    end
+end

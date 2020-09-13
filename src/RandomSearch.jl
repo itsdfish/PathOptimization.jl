@@ -19,11 +19,16 @@ function initialize(method::RandomSearch, cost::Array{Float64,2})
 end
 
 function initialize(method::RandomSearch, cost)
+    # number of objective functions
     n_obj = length(cost)
     scheme = Scheme{n_obj}(0.1, is_minimizing=true)
+    # object for managing Pareto frontier
     a = EpsBoxArchive(scheme)
+    # initialize fitness 
     fitness = fill(0.0, n_obj)
+    # initialize path
     path = fill(0, method.n_nodes)
+    # initialize state object
     state = RandomState(n_obj, cost, a, fitness, path)
     return state
 end
