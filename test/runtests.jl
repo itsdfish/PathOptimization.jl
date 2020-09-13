@@ -217,3 +217,34 @@ end
         @test diff_cost ≈ rel_cost rtol = .0001
     end
 end
+
+@safetestset "rank_order!" begin 
+    using PathOptimization, Random, Distributions
+    import PathOptimization: rank_order!
+    using Test
+    Random.seed!(6540)
+    n_obj = 2
+    n_nodes = 10
+    start_node = 3
+    end_node = 8
+    cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
+    method = DE(n_nodes=n_nodes, start_node=start_node, end_node=end_node)
+    state = initialize(method, cost)
+    particle = Particle(n_nodes, n_obj, start_node, end_node)
+    rank_order!(state, particle)
+    correct_order = [3,1,2,4,5,6,7,9,10,8]
+    @test particle.path == correct_order
+end
+
+@safetestset "swap_nodes!" begin 
+    using PathOptimization, Random, Distributions
+    import PathOptimization: swap_nodes!
+    using Test
+    Random.seed!(6540)
+    n = 6
+    path = [6,10,2,8,4,3,5,7,1,9]
+    best_path = [1,10,2,8,4,7,3,5,9,6]
+    correct_path = [6,10,2,8,4,7,5,3,1,9]
+    swap_nodes!(path, best_path, n)
+    @test path == correct_path
+end

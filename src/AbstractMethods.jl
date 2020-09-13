@@ -75,3 +75,29 @@ function findmin(fun::Function, X)
     end
     return X[min_idx],min_idx
 end
+
+"""
+* `method`: differential evolution  object
+* `path`: current path
+* `proposal`: proposal path
+"""
+function exponential!(method, path, proposal)
+    N = length(path)
+    κ = method.κ
+    i,j = 1,1
+    while (rand() ≤ κ) && (i ≤ N)
+        proposal[j] = path[j] 
+        i += 1
+        j = mod(j + 1, N)
+    end
+    return nothing
+end
+
+function binomial!(method, path, proposal)
+    N = length(path)
+    κ = method.κ
+    for i in 1:N
+        proposal[i] = rand() <= κ ? path[i] : proposal[i]
+    end
+    return nothing
+end

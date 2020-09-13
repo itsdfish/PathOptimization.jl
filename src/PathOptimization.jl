@@ -7,10 +7,12 @@ module PathOptimization
     export initialize, set_pheremones!, compute_probabilities!, set_pheremones!
     export pfind_paths!, find_path!, get_best_ants, compute_probabilities!, store_solutions!
     export RandomSearch, NearestNeighbor
+    export DE, DEState, Particle, rank_order, exponential!, binomial!
 
     include("api.jl")
     include("AntColony.jl")
     include("RandomSearch.jl")
     include("NearestNeighbor.jl")
+    include("DifferentialEvolution.jl")
     include("AbstractMethods.jl")
 end
