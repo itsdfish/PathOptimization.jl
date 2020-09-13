@@ -4,7 +4,7 @@ A Julia package for path optimization.
 
 # Example
 In the example below, ant colony optimization is used to find the Pareto frontier of a path with two objective cost functions. 
-```@julia
+```julia
 using Revise, PathOptimization, Distributions, Random, Plots
 using Fitness
 Random.seed!(5214)
@@ -35,7 +35,7 @@ The package PathOptimizaiton.jl provides a lightweight API for adding new algori
 
 Parameters of each algorithm are defined in a subtype of PathFinder. For example:
 
-```@julia
+```julia
 struct RandomSearch <: PathFinder
     n_nodes::Int
     start_node::Int
@@ -48,7 +48,7 @@ n_nodes is the number of nodes in the graph, start_node and end_node are the sta
 
 The state of each algorithm is tracked in a subtype of State. Here is a simple example:
 
-```@julia
+```julia
 mutable struct RandomState{T} <: State
     n_obj::Int
     cost::Array{Array{Float64,2},1}
@@ -66,7 +66,7 @@ n_obj is the number of objective functions, each array in cost corresponds to th
 
 The initialize function sets up the Pareto fronier, and other algorithmic specific configurations, and returns the state object.
 
-```@julia
+```julia
 function initialize(method::RandomSearch, cost)
     # number of objective functions
     n_obj = length(cost)
@@ -87,7 +87,7 @@ end
 
 A single threaded method that finds a path each iteration. A global RNG is passed by default to find_path!, which iteratively selects a random available vertex and computes the transition cost. 
 
-```@julia
+```julia
 function find_paths!(method::RandomSearch, state, args...)
     find_path!(method, state)
 end
@@ -118,7 +118,7 @@ end
 
 An optional multithreaded method that finds a path on each iteration.
 
-```@julia
+```julia
 pfind_paths!(method::RandomSearch, state, rngs)
 ```
 
@@ -126,7 +126,7 @@ pfind_paths!(method::RandomSearch, state, rngs)
 
 A method for updating the algorithm and state after each iteration. update! stores the solutions using a genric method and resets the state for the next iteration. 
 
-```@julia
+```julia
 function update!(method::RandomSearch, state)
     store_solutions!(method, state)
     reset_state!(state)
