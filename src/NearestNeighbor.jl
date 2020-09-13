@@ -61,11 +61,11 @@ Parallel search not supported for nearest neighbor
 * `state`: nearest neighbor object
 *  `rngs`: array of random number generators, one for each thread.
 """
-function pfind_paths!(method::NearestNeighbor, state, rngs)
-    find_paths!(method, state)
+function pfind_path!(method::NearestNeighbor, state, rngs)
+    find_path!(method, state)
 end
 
-function find_paths!(method::NearestNeighbor, state, args...)
+function find_path!(method::NearestNeighbor, state, args...)
     find_path!(method, state)
     method.use2opt ? two_opt(state) : nothing
 end

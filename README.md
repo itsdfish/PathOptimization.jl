@@ -27,13 +27,13 @@ scatter(frontier, grid=false, leg=false, ylims=(0,800), xlims=(0,800),
 
 # API
 
-The package PathOptimizaiton.jl provides a lightweight API for adding new algorithms, which only requires two objects and four methods. Additional methods can be called from the four required methods. An example based on a random search strategy is used to illustrate the API. A minimal working example can be found in src/RandomSearch.jl and Examples/Random_Search_Example.jl.
+The package PathOptimizaiton.jl provides a lightweight API for adding new algorithms, which only requires two objects and four methods. Below, the API is illustrated with a sample random search algorithm. The source code for the random searhc algorithm can be found in src/RandomSearch.jl. A working example can be found in Examples/Random_Search_Example.jl.
 
 ## Objects
 
 ### PathFinder
 
-Parameters of each algorithm are defined in a subtype of PathFinder. For example:
+Parameters of each algorithm are defined in a subtype of `PathFinder`. For example:
 
 ```julia
 struct RandomSearch <: PathFinder
@@ -42,11 +42,11 @@ struct RandomSearch <: PathFinder
     end_node::Int
 end
 ```
-n_nodes is the number of nodes in the graph, start_node and end_node are the starting and ending nodes, respectively.
+`n_nodes` is the number of nodes in the graph, start_node and end_node are the starting and ending nodes, respectively.
 
 ### State
 
-The state of each algorithm is tracked in a subtype of State. Here is a simple example:
+The state of each algorithm is tracked in a subtype of `State`. Here is a simple example:
 
 ```julia
 mutable struct RandomState{T} <: State
@@ -57,7 +57,7 @@ mutable struct RandomState{T} <: State
     path::Array{Int,1}
 end
 ```
-n_obj is the number of objective functions, each array in cost corresponds to the cost matrix of each objective, frontier manages the Pareto frontier, fitness is the cost of the solution for each objective, path is the current path.
+`n_obj` is the number of objective functions, each array in cost corresponds to the cost matrix of each objective, frontier manages the Pareto frontier, fitness is the cost of the solution for each objective, path is the current path.
 
 ## Methods
 
@@ -83,12 +83,12 @@ function initialize(method::RandomSearch, cost)
 end
 ```
 
-### find_paths!
+### find_path!
 
-A single threaded method that finds a path each iteration. A global RNG is passed by default to find_path!, which iteratively selects a random available vertex and computes the transition cost. 
+A single threaded method that finds a path each iteration. A global RNG is passed by default to `find_path`!, which iteratively selects a random available vertex and computes the transition cost. 
 
 ```julia
-function find_paths!(method::RandomSearch, state, args...)
+function find_path!(method::RandomSearch, state, args...)
     find_path!(method, state)
 end
 
@@ -114,17 +114,17 @@ function find_path!(method::RandomSearch, state::RandomState, rng)
 end
 ```
 
-### pfind_paths!
+### pfind_path!
 
 An optional multithreaded method that finds a path on each iteration.
 
 ```julia
-pfind_paths!(method::RandomSearch, state, rngs)
+pfind_path!(method::RandomSearch, state, rngs)
 ```
 
 ### update!
 
-A method for updating the algorithm and state after each iteration. update! stores the solutions using a genric method and resets the state for the next iteration. 
+A method for updating the algorithm and state after each iteration. `update!` stores the solutions using a genric method and resets the state for the next iteration. 
 
 ```julia
 function update!(method::RandomSearch, state)

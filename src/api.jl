@@ -41,9 +41,9 @@ function optimize(method::PathFinder, cost, iterations; parallel=true,
     state = initialize(method, cost)
     seeds = rand(UInt, nthreads())
     rngs = MersenneTwister.(seeds)
-    _find_paths! = parallel ? pfind_paths! : find_paths!
+    _find_path! = parallel ? pfind_path! : find_path!
     for i in 1:iterations
-        _find_paths!(method, state, rngs)
+        _find_path!(method, state, rngs)
         update!(method, state)
         progress ? next!(meter) : nothing
     end

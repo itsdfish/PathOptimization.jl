@@ -172,7 +172,7 @@ end
     @test all(x -> x == 1.0, τ)
 end
 
-@safetestset "find min via function" begin 
+@safetestset "find min" begin 
     using PathOptimization, Distributions, Random
     using Test
     n_nodes = 10
@@ -181,8 +181,9 @@ end
     ants[1].fitness = [2.0,1.0]
     ants[2].fitness = [1.0,0.0]
     ants[3].fitness = [0.0,1.0]
-    _,min_idx = findmin(x->x.fitness[1], ants)
+    min_ant,min_idx = findmin(x->x.fitness[1], ants)
     @test min_idx == 3
+    @test min_ant == ants[3]
 end
 
 @safetestset "2-opt" begin 

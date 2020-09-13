@@ -114,7 +114,7 @@ Find path for each ant in parallel.
 *  `rngs`: array of random number generators, one for each thread.
 """
 
-function pfind_paths!(method::AntColony, state, rngs)
+function pfind_path!(method::AntColony, state, rngs)
     @threads for ant in method.ants 
         rng = rngs[threadid()]
         find_path!(method, state, ant, rng)
@@ -128,14 +128,14 @@ Find path for each ant.
 * `state`: colony state object
 """
 
-function find_paths!(method::AntColony, state, args...)
+function find_path!(method::AntColony, state, args...)
     for ant in method.ants
         find_path!(method, state, ant)
     end
     method.use2opt ? two_opt(method, state) : nothing
 end
 
-find_path!(method::AntColony, state, ant) = find_path!(method, state, ant, Random.GLOBAL_RNG)
+find_path!(method::AntColony, state, ant::Ant) = find_path!(method, state, ant, Random.GLOBAL_RNG)
 
 function two_opt(method::AntColony, state)
     for obj in 1:state.n_obj
@@ -165,7 +165,7 @@ Find path for an individual ant.
 * `ant`: a single ant
 *  `rng`: a random number generator object.
 """
-function find_path!(method::AntColony, state, ant, rng)
+function find_path!(method::AntColony, state, ant::Ant, rng)
     @unpack start_node, end_node, n_nodes = method
     @unpack path,fitness = ant
     @unpack θ,cost,n_obj = state

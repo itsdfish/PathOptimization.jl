@@ -33,11 +33,11 @@ function initialize(method::RandomSearch, cost)
     return state
 end
 
-function pfind_paths!(method::RandomSearch, state, rngs)
+function pfind_path!(method::RandomSearch, state, rngs)
     find_path!(method, state)
 end
 
-function find_paths!(method::RandomSearch, state, args...)
+function find_path!(method::RandomSearch, state, args...)
     find_path!(method, state)
 end
 

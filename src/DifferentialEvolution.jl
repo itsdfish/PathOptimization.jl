@@ -92,22 +92,22 @@ function initialize(method::DE, cost)
     return state
 end
 
-function pfind_paths!(method::DE, state, rngs)
+function pfind_path!(method::DE, state, rngs)
     @threads for particle in method.particles 
         rng = rngs[threadid()]
         find_path!(method, state, particle, rng)
     end
 end
 
-function find_paths!(method::DE, state, args...)
+function find_path!(method::DE, state, args...)
     for particle in state.particles
         find_path!(method, state, particle)
     end
 end
 
-find_path!(method::DE, state::DEState, particle) = find_path!(method, state, particle, Random.GLOBAL_RNG)
+find_path!(method::DE, state::DEState, particle::Particle) = find_path!(method, state, particle, Random.GLOBAL_RNG)
 
-function find_path!(method::DE, state::DEState, particle, rng)
+function find_path!(method::DE, state::DEState, particle::Particle, rng)
     @unpack n_obj,fitness,path,cost = state
     @unpack n_nodes,start_node,end_node = method
     path[1],path[end] = start_node,end_node
@@ -168,8 +168,6 @@ function rank_order!(state, particle)
     path = @view particle.path[2:end-1]
     idx = sortperm(cpath)
     path .= state.mid_nodes[idx]
-    # particle.path[1] = start_node
-    # particle.path[end] = end_node
 end
 
 function best_match_rank(method, state, particle)
