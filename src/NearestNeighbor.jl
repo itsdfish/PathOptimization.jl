@@ -66,7 +66,7 @@ function pfind_path!(method::NearestNeighbor, state, rngs)
 end
 
 function find_path!(method::NearestNeighbor, state, args...)
-    find_path!(method, state)
+    nearest_neighbor!(method, state)
     method.use2opt ? two_opt(state) : nothing
 end
 
@@ -78,26 +78,30 @@ Find path for nearest neigbhor
 * `state`: algorithm state object
 *  `rng`: a random number generator object.
 """
-function find_path!(method::NearestNeighbor, state::NearestState, rng)
-    @unpack n_obj,fitness,path,cost = state
-    @unpack n_nodes,start_node,end_node = method
-    path[1],path[end] = start_node,end_node
-    not_visited = [1:n_nodes;]
-    deleteat!(not_visited, [start_node,end_node])
-    n0 = start_node
-    for n in 2:(n_nodes - 1)
-        obj_idx = rand(rng, 1:n_obj)
-        v = @view cost[obj_idx][n0,not_visited]
-        _,min_idx = findmin(v)
-        n1 = not_visited[min_idx]
-        deleteat!(not_visited, min_idx)
-        path[n] = n1
-        map!(i -> fitness[i] += cost[i][n0,n1], fitness, 1:n_obj) 
-        n0 = n1
-    end
-    map!(i -> fitness[i] += cost[i][n0,end_node], fitness, 1:n_obj) 
-    return nothing
+function nearest_neighbor!(method::NearestNeighbor, state)
+    return nearest_neighbor!(method, state, state.fitness, state.path)
 end
+
+# function find_path!(method::NearestNeighbor, state::NearestState, rng)
+#     @unpack n_obj,fitness,path,cost = state
+#     @unpack n_nodes,start_node,end_node = method
+#     path[1],path[end] = start_node,end_node
+#     not_visited = [1:n_nodes;]
+#     deleteat!(not_visited, [start_node,end_node])
+#     n0 = start_node
+#     for n in 2:(n_nodes - 1)
+#         obj_idx = rand(rng, 1:n_obj)
+#         v = @view cost[obj_idx][n0,not_visited]
+#         _,min_idx = findmin(v)
+#         n1 = not_visited[min_idx]
+#         deleteat!(not_visited, min_idx)
+#         path[n] = n1
+#         map!(i -> fitness[i] += cost[i][n0,n1], fitness, 1:n_obj) 
+#         n0 = n1
+#     end
+#     map!(i -> fitness[i] += cost[i][n0,end_node], fitness, 1:n_obj) 
+#     return nothing
+# end
 
 function update!(method::NearestNeighbor, state)
     store_solutions!(method, state)

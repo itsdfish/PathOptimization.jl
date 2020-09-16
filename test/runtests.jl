@@ -232,8 +232,9 @@ end
     method = DE(n_nodes=n_nodes, start_node=start_node, end_node=end_node)
     state = initialize(method, cost)
     particle = Particle(n_nodes, n_obj, start_node, end_node)
-    rank_order!(state, particle)
-    correct_order = [3,1,2,4,5,6,7,9,10,8]
+    shuffle!(@view particle.Θ[2:end-1])
+    rank_order!(method, state, particle)
+    correct_order = [3,9,5,7,2,10,4,6,1,8]
     @test particle.path == correct_order
 end
 

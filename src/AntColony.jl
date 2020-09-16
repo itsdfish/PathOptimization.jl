@@ -288,10 +288,7 @@ end
 get_fitness(ant) = ant.fitness
 
 function eval_progress!(method::AntColony, state)
-    frontier = state.frontier
-    streak = noprogress_streak(state.frontier, since_restart=true)
-    if streak > method.max_no_change * method.n_ants 
-        notify!(frontier, :restart)
+    if exceed_max_no_change!(method, state, method.n_ants)
         reset_pheremones!(method, state)
     end
     return nothing
