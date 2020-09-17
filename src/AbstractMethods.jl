@@ -84,11 +84,11 @@ end
 function exponential!(method, path, proposal)
     N = length(path)
     κ = method.κ
-    i,j = 1,1
+    i,j = 1,0
     while (rand() ≤ κ) && (i ≤ N)
-        proposal[j] = path[j] 
         i += 1
-        j = mod(j + 1, N)
+        j = 1 + mod(j, N)
+        proposal[j] = path[j] 
     end
     return nothing
 end

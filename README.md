@@ -42,7 +42,7 @@ struct RandomSearch <: PathFinder
     end_node::Int
 end
 ```
-`n_nodes` is the number of nodes in the graph, start_node and end_node are the starting and ending nodes, respectively.
+`n_nodes` is the number of nodes in the graph, `start_node` and `end_node` are the starting and ending nodes, respectively.
 
 ### State
 
@@ -57,7 +57,7 @@ mutable struct RandomState{T} <: State
     path::Array{Int,1}
 end
 ```
-`n_obj` is the number of objective functions, each array in cost corresponds to the cost matrix of each objective, frontier manages the Pareto frontier, fitness is the cost of the solution for each objective, path is the current path.
+`n_obj` is the number of objective functions, each array in `cost` corresponds to the cost matrix of each objective, `frontier` manages the Pareto frontier, `fitness` is the cost of the solution for each objective, and `path` is the current path.
 
 ## Methods
 

@@ -1,10 +1,10 @@
 cd(@__DIR__)
 using Revise, PathOptimization, Distributions, Random, Plots
 using Fitness
-Random.seed!(514074)
+Random.seed!(81512)
 n_obj = 2
-n_nodes = 10
-cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
+n_nodes = 20
+cost = [rand(Uniform(0, 10), n_nodes, n_nodes) for _ in 1:n_obj] 
 iterations = 10_000
 method = DE(n_nodes=n_nodes, start_node=3, end_node=8)
 options = (parallel = false, progress = false)
@@ -12,4 +12,5 @@ options = (parallel = false, progress = false)
 
 frontier = get_best_cost(result.frontier)
 pyplot()
-scatter(frontier, grid=false, leg=false, ylims=(0,1500), xlims=(0,1500))
+scatter(frontier, grid=false, ylims=(0,120), xlims=(0,120), label="DE",
+    color=:grey)

@@ -114,29 +114,38 @@ end
 find_path!(method::DE, state::DEState, particle::Particle) = find_path!(method, state, particle, Random.GLOBAL_RNG)
 
 function find_path!(method::DE, state::DEState, particle::Particle, rng)
-    @unpack n_obj,fitness,path,cost = state
-    @unpack n_nodes,start_node,end_node = method
-    path[1],path[end] = start_node,end_node
-    w = fill(1 / n_nodes, n_nodes)
-    w[[start_node,end_node]] .= 0.0
-    n0 = start_node
+    set_objective!(state, particle)
+    proposal = cross_over(method, particle, state.particles, rng)
+    exponential!(method, particle.path, proposal.path)
+    compute_path_cost!(proposal, state.cost)
+    update_particle!(particle, proposal)
+    best_match_rank!(method, state, particle)
 end
 
-function update!(method::DE, state)
-    store_solutions!(method, state)
-    set_best_path(method, state)
-    adapt_gamma(method, state)
-end
-
-function store_solutions!(method, state)
-    add_candidate!(state.frontier, Tuple(state.fitness), state.path, 2)
+function set_objective!(state, particle)
+    particle.obj_idx = rand(1:state.n_obj)
     return nothing
 end
 
-function cross_over(de, Pt, particles)
+function update!(method::DE, state)
+    @unpack particles = state
+    store_solutions!(method, state)
+
+    
+    #adapt_gamma(method, state)
+end
+
+function store_solutions!(method::DE, state)
+    for particle in state.particles
+        add_candidate!(state.frontier, Tuple(particle.fitness), particle.path, 2)
+    end
+    return nothing
+end
+
+function cross_over(de, Pt, particles, rng)
     idxs = findall(x -> x != Pt, particles)
     others = @view particles[idxs]
-    Pm,Pn = sample(others, 2, replace=false)
+    Pm,Pn = sample(rng, others, 2, replace=false)
     γ = 2.38
     # compute proposal value
     proposal = Pt + γ * (Pm - Pn)
@@ -150,7 +159,8 @@ Update particle based on Greedy Rule.
 * `proposal`: proposal particle
 """
 function update_particle!(current, proposal)
-    if proposal.fitness < current.fitness
+    idx = current.obj_idx
+    if proposal.fitness[idx] < current.fitness[idx]
         current.path = proposal.path
         current.fitness = proposal.fitness
     end
@@ -237,7 +247,7 @@ function eval_progress!(method::DE, state)
 end
 
 function compute_path_cost!(particle, cost)
-    particle.fitness .= compute_path_cost(particle.path, cost)
+    particle.fitness = compute_path_cost(particle.path, cost)
 end
 
 # Type-stable arithmatic operations for Union{Array{T,1},T} types (which return Any otherwise)

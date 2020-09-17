@@ -41,3 +41,15 @@ frontier = get_best_cost(result.frontier)
 pyplot()
 scatter!(frontier, grid=false, ylims=(0,120), xlims=(0,120), label="Nearest Neighbor",
     color=:purple)
+###############################################################################
+# 
+###############################################################################
+iterations = 10_000
+method = DE(n_nodes=n_nodes, start_node=3, end_node=8)
+options = (parallel = false, progress = false)
+result = optimize(method, cost, iterations; options...)
+
+frontier = get_best_cost(result.frontier)
+pyplot()
+scatter!(frontier, grid=false, ylims=(0,120), xlims=(0,120), label="DE",
+    color=:darkred)

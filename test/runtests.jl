@@ -201,6 +201,18 @@ end
     @test path_cost > path1_costs
 end
 
+@safetestset "cost" begin 
+    using PathOptimization, Random
+    import PathOptimization: compute_path_cost
+    using Test
+    Random.seed!(6540)
+    n_nodes = 10
+    costs = [i*1.0 for _ in 1:5, i in 1:5]
+    path = [1,2,2,2,4,1,3]
+    cost1 = compute_path_cost(path, costs)
+    @test cost1 == sum(path[2:end])
+end
+
 @safetestset "relative cost" begin 
     using PathOptimization, Random
     import PathOptimization: relative_cost, compute_path_cost
@@ -249,4 +261,23 @@ end
     correct_path = [6,10,2,8,4,7,5,3,1,9]
     swap_nodes!(path, best_path, n)
     @test path == correct_path
+end
+
+@safetestset "swap_nodes!" begin 
+    using PathOptimization, Random, Distributions
+    import PathOptimization: cross_over
+    using Test
+    Random.seed!(6540)
+    n_obj = 2
+    n_nodes = 10
+    start_node = 3
+    end_node = 8
+    cost = [rand(Uniform(0, 50), n_nodes, n_nodes) for _ in 1:n_obj] 
+    method = DE(n_nodes=n_nodes, start_node=start_node, end_node=end_node)
+    state = initialize(method, cost)
+    particles = state.particles
+    particle = Particle(n_nodes, n_obj, start_node, end_node)
+    proposal = cross_over(method, particle, state.particles)
+    Θ = [3.0, -1.38, 3.62, -7.279999999999999, 21.9, 5.0, 4.0, 20.9, -2.76, 8.0]
+    @test proposal.Θ ≈ Θ atol = .0001
 end
