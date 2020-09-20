@@ -10,7 +10,7 @@ mutable struct Particle
     path::Array{Int,1}
     Θ::Array{Float64,1}
     fitness::Array{Float64,1}
-    n_same::Int
+    cross_over_id::Int
 end
 
 Base.broadcastable(x::Particle) = Ref(x)
@@ -25,7 +25,7 @@ function Particle(n_nodes::Int, n_obj, start_node, end_node)
     Particle(obj_idx, path, Θ, fitness, 0)
 end
 
-function Particle(;Θ=Θ)
+function Particle(;Θ)
     n_nodes = length(Θ)
     path = [1:n_nodes;]
     fitness = Float64[]
@@ -45,6 +45,7 @@ end
 * `γmax`: γ max for differential (default = .80)
 * `recombination!`: a recombination function (default `exponential`!)
 * `max_evals`: maximum number of evaluations a particle can have without improving fitness 
+* `n_cycles`: number of calibration cycles for ensemble crossover method
 """
 struct DE{F1,F2<:Function} <: PathFinder
     n_particles::Int
@@ -61,25 +62,28 @@ struct DE{F1,F2<:Function} <: PathFinder
     max_evals::Int
     max_no_change::Int
     cross_over_fun::F2
+    n_cycles::Int
 end
 
 function DE(;n_particles=50, n_nodes, start_node=1, end_node=n_nodes,κ=.50, Θneighbor=.10, 
     θbest=.9, θswap=.8, γmin=.6, γmax=.8, recombination! = exponential!, max_evals=10, max_no_change=100*n_particles,
-    cross_over_fun=cross_over_best)
-    return DE(n_particles, n_nodes, start_node, end_node, κ, Θneighbor,
-        θbest, θswap, γmin, γmax, recombination!, max_evals, max_no_change, cross_over_fun)
+    cross_over_fun=cross_over_best, n_cycles=10)
+    return DE(n_particles, n_nodes, start_node, end_node, κ, Θneighbor, θbest, θswap, γmin, γmax,
+        recombination!, max_evals, max_no_change, cross_over_fun, n_cycles)
 end
 
 """
 * `mid_nodes`: all nodes excluding end points, which can be reordered
 """
-mutable struct DEState{T} <: State
+mutable struct DEState{T1,T2} <: State
     n_evals::Int
+    iter::Int
     n_obj::Int
     cost::Array{Array{Float64,2},1}
-    frontier::T
+    frontier::T1
     particles::Array{Particle,1}
     mid_nodes::Array{Int,1}
+    cross_over_funs::T2
 end
 
 function initialize(method::DE, cost::Array{Float64,2})
@@ -94,13 +98,29 @@ function initialize(method::DE, cost)
     fitness = fill(0.0, n_obj)
     mid_nodes = setdiff([1:n_nodes;], [start_node,end_node])
     particles = [Particle(n_nodes, n_obj, start_node,end_node) for _ in 1:n_particles]
-    state = DEState(0, n_obj, cost, a, particles, mid_nodes)
+    set_group_id!(particles)
+    cross_over_funs = (cross_over,cross_over_best,cross_over_trig)
+    state = DEState(0, 0, n_obj, cost, a, particles, mid_nodes, cross_over_funs)
     nearest_neighbor!(method, state)
     map(x->compute_path_cost!(x, cost), particles)
     return state
 end
 
+function set_group_id!(particles)
+    n_particles = length(particles)
+    group_sizes = map(_->div(n_particles, 3), 1:3)
+    remainder = mod(n_particles, 3)
+    idx = sample(1:3, remainder, replace = false)
+    group_sizes[idx] .+= 1
+    ids = mapreduce((i,n)->fill(i, n), vcat, 1:3, group_sizes)
+    for (id,p) in zip(ids,particles)
+        p.cross_over_id = id
+    end
+    return nothing
+end
+
 function pfind_path!(method::DE, state, rngs)
+    state.iter += 1
     @threads for particle in method.particles 
         rng = rngs[threadid()]
         find_path!(method, state, particle, rng)
@@ -108,6 +128,7 @@ function pfind_path!(method::DE, state, rngs)
 end
 
 function find_path!(method::DE, state, args...)
+    state.iter += 1
     for particle in state.particles
         find_path!(method, state, particle)
     end
@@ -135,6 +156,7 @@ function update!(method::DE, state)
     two_opt(method, state)
     fix_stuck!(method, state)
     store_solutions!(method, state)
+    reset_counter!(state)
 end
 
 function store_solutions!(method::DE, state)
@@ -183,6 +205,20 @@ function cross_over_trig(de, state, Pt, rng)
         (w₃-w₂) * (P₂ - P₃) + (w₁-w₃) * (P₃ - P₁) 
     proposal.obj_idx = Pt.obj_idx
     return proposal
+end
+
+function cross_over_ensamble(de, state, Pt, rng)
+   if mod(state.iter, method.n_cycles) != 0
+        id = state.best_fun_id
+        proposal = state.cross_over_funs[id](de, state, Pt, rng)
+        compute_path_cost!(proposal, cost)
+        return proposal
+   else
+        id = Pt.best_fun_id
+        proposal = state.cross_over_funs[id](de, state, Pt, rng)
+        compute_path_cost!(proposal, cost)
+        return proposal
+   end
 end
 
 """
@@ -300,6 +336,12 @@ function two_opt(method::DE, state)
         compute_path_cost!(particle, cost)
     end
     return nothing
+end
+
+function reset_counter!(state)
+    #state.cross_count .= 0
+
+
 end
 
 # Type-stable arithmatic operations for Union{Array{T,1},T} types (which return Any otherwise)
