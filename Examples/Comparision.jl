@@ -44,8 +44,10 @@ scatter!(frontier, grid=false, ylims=(0,120), xlims=(0,120), label="Nearest Neig
 ###############################################################################
 # 
 ###############################################################################
-iterations = 10_000
-method = DE(n_nodes=n_nodes, start_node=3, end_node=8)
+iterations = 1_000
+fun(de, state, Pt, rng) = deepcopy(Pt)
+method = DE(n_nodes=n_nodes, start_node=3, end_node=8, cross_over_fun=cross_over_best,
+    Θneighbor = .1)
 options = (parallel = false, progress = false)
 result = optimize(method, cost, iterations; options...)
 

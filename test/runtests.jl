@@ -263,9 +263,9 @@ end
     @test path == correct_path
 end
 
-@safetestset "swap_nodes!" begin 
+@safetestset "cross over" begin 
     using PathOptimization, Random, Distributions
-    import PathOptimization: cross_over
+    import PathOptimization: cross_over, rank_order!
     using Test
     Random.seed!(6540)
     n_obj = 2
@@ -277,7 +277,19 @@ end
     state = initialize(method, cost)
     particles = state.particles
     particle = Particle(n_nodes, n_obj, start_node, end_node)
-    proposal = cross_over(method, particle, state.particles)
-    Θ = [3.0, -1.38, 3.62, -7.279999999999999, 21.9, 5.0, 4.0, 20.9, -2.76, 8.0]
+    proposal = cross_over(method, state, particle)
+    rank_order!(method, state, proposal)
+    Θ = [3.0,  0.2,  5.2,  2.2,  14.0,  5.0,  4.0,  13.0 , 0.4,  8.0]
     @test proposal.Θ ≈ Θ atol = .0001
+end
+
+@safetestset "adapt gamma" begin 
+    using PathOptimization, Random, Distributions
+    import PathOptimization: adapt_gamma
+    using Test
+    γmin = .7
+    γmax = .9
+    @test adapt_gamma(γmin, γmax, 0, 100) == γmax
+    @test adapt_gamma(γmin, γmax, 100, 100) == γmin
+    @test adapt_gamma(γmin, γmax, 50, 100) == γmin + (γmax-γmin)/2
 end

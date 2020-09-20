@@ -46,7 +46,7 @@ end
 * `recombination!`: a recombination function (default `exponential`!)
 * `max_evals`: maximum number of evaluations a particle can have without improving fitness 
 """
-struct DE{F<:Function} <: PathFinder
+struct DE{F1,F2<:Function} <: PathFinder
     n_particles::Int
     n_nodes::Int
     start_node::Int
@@ -57,15 +57,17 @@ struct DE{F<:Function} <: PathFinder
     θswap::Float64
     γmin::Float64
     γmax::Float64
-    recombination!::F
+    recombination!::F1
     max_evals::Int
     max_no_change::Int
+    cross_over_fun::F2
 end
 
 function DE(;n_particles=50, n_nodes, start_node=1, end_node=n_nodes,κ=.50, Θneighbor=.10, 
-    θbest=.9, θswap=.8, γmin=.6, γmax=.8, recombination! = exponential!, max_evals=10, max_no_change=100)
+    θbest=.9, θswap=.8, γmin=.6, γmax=.8, recombination! = exponential!, max_evals=10, max_no_change=100*n_particles,
+    cross_over_fun=cross_over_best)
     return DE(n_particles, n_nodes, start_node, end_node, κ, Θneighbor,
-        θbest, θswap, γmin, γmax, recombination!, max_evals, max_no_change)
+        θbest, θswap, γmin, γmax, recombination!, max_evals, max_no_change, cross_over_fun)
 end
 
 """
@@ -114,8 +116,9 @@ end
 find_path!(method::DE, state::DEState, particle::Particle) = find_path!(method, state, particle, Random.GLOBAL_RNG)
 
 function find_path!(method::DE, state::DEState, particle::Particle, rng)
+    state.n_evals += 1
     set_objective!(state, particle)
-    proposal = cross_over(method, particle, state.particles, rng)
+    proposal = method.cross_over_fun(method, state, particle, rng)
     exponential!(method, particle.path, proposal.path)
     compute_path_cost!(proposal, state.cost)
     update_particle!(particle, proposal)
@@ -129,10 +132,9 @@ end
 
 function update!(method::DE, state)
     @unpack particles = state
+    two_opt(method, state)
+    fix_stuck!(method, state)
     store_solutions!(method, state)
-
-    
-    #adapt_gamma(method, state)
 end
 
 function store_solutions!(method::DE, state)
@@ -142,13 +144,43 @@ function store_solutions!(method::DE, state)
     return nothing
 end
 
-function cross_over(de, Pt, particles, rng)
+cross_over(de, state, Pt) = cross_over(de, state, Pt, Random.GLOBAL_RNG)
+
+function cross_over(de, state, Pt, rng)
+    @unpack particles = state
     idxs = findall(x -> x != Pt, particles)
     others = @view particles[idxs]
-    Pm,Pn = sample(rng, others, 2, replace=false)
-    γ = 2.38
+    P₁,P₂,P₃ = sample(rng, others, 3, replace=false)
+    γ = adapt_gamma(de, state)
     # compute proposal value
-    proposal = Pt + γ * (Pm - Pn)
+    proposal = P₁ + γ * (P₂ - P₃)
+    proposal.obj_idx = Pt.obj_idx
+    return proposal
+end
+
+function cross_over_best(de, state, particle, rng)
+    @unpack particles, = state
+    @unpack obj_idx = particle
+    Pb,_ = findmin(x->x.fitness[obj_idx], particles) 
+    P₁,P₂,P₃,P₄ = sample(rng, particles, 4, replace=false)
+    γ = adapt_gamma(de, state)
+    # compute proposal value
+    proposal = Pb + γ * (P₁ - P₂) + γ * (P₃ - P₄)
+    proposal.obj_idx = obj_idx
+    return proposal
+end
+
+function cross_over_trig(de, state, Pt, rng)
+    @unpack particles = state
+    @unpack obj_idx = Pt
+    idxs = findall(x -> x != Pt, particles)
+    others = @view particles[idxs]
+    P₁,P₂,P₃ = sample(rng, others, 3, replace=false)
+    # compute proposal value
+    W = map(x->x.fitness[obj_idx], [P₁,P₂,P₃])
+    w₁,w₂,w₃ = W ./sum(W)
+    proposal = (P₁ + P₂ + P₃)/3.0 + (w₂-w₁) * (P₁ - P₂) +
+        (w₃-w₂) * (P₂ - P₃) + (w₁-w₃) * (P₃ - P₁) 
     proposal.obj_idx = Pt.obj_idx
     return proposal
 end
@@ -160,7 +192,7 @@ Update particle based on Greedy Rule.
 """
 function update_particle!(current, proposal)
     idx = current.obj_idx
-    if proposal.fitness[idx] < current.fitness[idx]
+    if all(proposal.fitness .< current.fitness)
         current.path = proposal.path
         current.fitness = proposal.fitness
     end
@@ -182,10 +214,14 @@ function nearest_neighbor!(method::PathFinder, state, particle)
     nearest_neighbor!(method::PathFinder, state, fitness, path)
 end
 
-function adapt_gamma(method, state)
-    @unpack γmin, γmax = method
-    @unpack max_evals, n_evals = state
+function adapt_gamma(γmin, γmax, n_evals, max_evals)
     return (γmin - γmax) / max_evals * n_evals + γmax
+end
+
+function adapt_gamma(method, state)
+    @unpack max_evals, γmin, γmax = method
+    @unpack n_evals = state
+    adapt_gamma(γmin, γmax, n_evals, max_evals)
 end
 
 function rank_order!(method, state, particle)
@@ -239,9 +275,14 @@ function swap_nodes!(path, best_path, n)
     return nothing
 end
 
-function eval_progress!(method::DE, state)
-    if exceed_max_no_change(method, state, method.particles)
-        #reset_pheremones!(method, state)
+function fix_stuck!(method::DE, state)
+    @unpack cost,particles = state
+    if exceed_max_no_change!(method, state)
+        for particle in particles
+            new_path = two_opt(particle.path, cost)
+            particle.path = new_path
+            compute_path_cost!(particle, cost)
+        end
     end
     return nothing
 end
@@ -250,8 +291,19 @@ function compute_path_cost!(particle, cost)
     particle.fitness = compute_path_cost(particle.path, cost)
 end
 
+function two_opt(method::DE, state)
+    @unpack n_obj,particles, cost = state
+    for obj in 1:n_obj
+        particle,_ = findmin(x->x.fitness[obj], particles)
+        new_path = two_opt(particle.path, cost)
+        particle.path = new_path
+        compute_path_cost!(particle, cost)
+    end
+    return nothing
+end
+
 # Type-stable arithmatic operations for Union{Array{T,1},T} types (which return Any otherwise)
-import Base: +, - ,*
+import Base: +, -, *, /
 
 function +(x::Particle, y::Particle)
     N = length(x.Θ)
@@ -289,6 +341,26 @@ function *(x::Particle, y::Float64)
     z = similar(x.Θ)
     for i in 1:N
         z[i] = x.Θ[i] .* y
+    end
+    return Particle(Θ=z)
+end
+
+function /(x::Particle, y::Particle)
+    N = length(x.Θ)
+    z = similar(x.Θ)
+    for i in 1:N
+        z[i] = x.Θ[i] ./ y.Θ[i]
+    end
+    return Particle(Θ=z)
+end
+
+/(x::Float64, y::Particle) = /(y, x)
+
+function /(x::Particle, y::Float64)
+    N = length(x.Θ)
+    z = similar(x.Θ)
+    for i in 1:N
+        z[i] = x.Θ[i] ./ y
     end
     return Particle(Θ=z)
 end
