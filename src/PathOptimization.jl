@@ -7,6 +7,7 @@ module PathOptimization
     export initialize, set_pheremones!, compute_probabilities!, set_pheremones!
     export pfind_paths!, find_path!, get_best_ants, compute_probabilities!, store_solutions!
     export RandomSearch, NearestNeighbor, cross_over, cross_over_best, cross_over_trig
+    export cross_over_ensemble
     export DE, DEState, Particle, rank_order, exponential!, binomial!
 
     include("api.jl")

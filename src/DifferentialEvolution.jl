@@ -67,7 +67,7 @@ end
 
 function DE(;n_particles=50, n_nodes, start_node=1, end_node=n_nodes,κ=.50, Θneighbor=.10, 
     θbest=.9, θswap=.8, γmin=.6, γmax=.8, recombination! = exponential!, max_evals=10, max_no_change=100*n_particles,
-    cross_over_fun=cross_over_best, n_cycles=10)
+    cross_over_fun=cross_over_ensemble, n_cycles=10)
     return DE(n_particles, n_nodes, start_node, end_node, κ, Θneighbor, θbest, θswap, γmin, γmax,
         recombination!, max_evals, max_no_change, cross_over_fun, n_cycles)
 end
@@ -84,6 +84,9 @@ mutable struct DEState{T1,T2} <: State
     particles::Array{Particle,1}
     mid_nodes::Array{Int,1}
     cross_over_funs::T2
+    best_cross_over::Array{Int,1}
+    exploring::Bool
+    best_fun_id::Int
 end
 
 function initialize(method::DE, cost::Array{Float64,2})
@@ -100,7 +103,9 @@ function initialize(method::DE, cost)
     particles = [Particle(n_nodes, n_obj, start_node,end_node) for _ in 1:n_particles]
     set_group_id!(particles)
     cross_over_funs = (cross_over,cross_over_best,cross_over_trig)
-    state = DEState(0, 0, n_obj, cost, a, particles, mid_nodes, cross_over_funs)
+    best_cross_over = fill(0,3)
+    state = DEState(0, 0, n_obj, cost, a, particles, mid_nodes, cross_over_funs,
+        best_cross_over, true, 0)
     nearest_neighbor!(method, state)
     map(x->compute_path_cost!(x, cost), particles)
     return state
@@ -121,6 +126,7 @@ end
 
 function pfind_path!(method::DE, state, rngs)
     state.iter += 1
+    switch_ensemble_state!(method, state)
     @threads for particle in method.particles 
         rng = rngs[threadid()]
         find_path!(method, state, particle, rng)
@@ -129,6 +135,7 @@ end
 
 function find_path!(method::DE, state, args...)
     state.iter += 1
+    switch_ensemble_state!(method, state)
     for particle in state.particles
         find_path!(method, state, particle)
     end
@@ -147,16 +154,21 @@ function find_path!(method::DE, state::DEState, particle::Particle, rng)
 end
 
 function set_objective!(state, particle)
-    particle.obj_idx = rand(1:state.n_obj)
+    particle.obj_idx = sample_objective(state)
     return nothing
+end
+
+function sample_objective(state)
+    return rand(1:state.n_obj)
 end
 
 function update!(method::DE, state)
     @unpack particles = state
     two_opt(method, state)
+    eval_ensemble!(method, state)
     fix_stuck!(method, state)
     store_solutions!(method, state)
-    reset_counter!(state)
+    reset_same_counter!(state)
 end
 
 function store_solutions!(method::DE, state)
@@ -207,18 +219,20 @@ function cross_over_trig(de, state, Pt, rng)
     return proposal
 end
 
-function cross_over_ensamble(de, state, Pt, rng)
-   if mod(state.iter, method.n_cycles) != 0
-        id = state.best_fun_id
-        proposal = state.cross_over_funs[id](de, state, Pt, rng)
-        compute_path_cost!(proposal, cost)
-        return proposal
-   else
-        id = Pt.best_fun_id
-        proposal = state.cross_over_funs[id](de, state, Pt, rng)
-        compute_path_cost!(proposal, cost)
-        return proposal
-   end
+function cross_over_ensemble(method, state, Pt, rng)
+    id = state.exploring ? Pt.cross_over_id : state.best_fun_id
+    proposal = state.cross_over_funs[id](method, state, Pt, rng)
+    return proposal
+end
+
+function switch_ensemble_state!(method, state)
+    if mod(state.iter, method.n_cycles) == 0
+        state.exploring = !state.exploring
+        _,idx = findmax(state.best_cross_over)
+        state.best_fun_id = idx
+        state.best_cross_over .= 0
+    end
+    return nothing
 end
 
 """
@@ -338,10 +352,23 @@ function two_opt(method::DE, state)
     return nothing
 end
 
-function reset_counter!(state)
+function reset_same_counter!(state)
     #state.cross_count .= 0
 
 
+end
+
+function eval_ensemble!(method::DE{T,C}, state) where {T,C <: typeof(cross_over_ensemble)}
+    obj = sample_objective(state)
+    best_particle,_ = findmin(x->x.fitness[obj], state.particles)
+    id = best_particle.cross_over_id
+    state.best_cross_over[id] += 1
+    return nothing
+end
+
+function eval_ensemble!(method, state)
+    # blank by default
+    return nothing
 end
 
 # Type-stable arithmatic operations for Union{Array{T,1},T} types (which return Any otherwise)
